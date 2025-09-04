@@ -5,3 +5,785 @@
   publisher = {GitHub},
   url       = {https://github.com/airas-org/airas}
 }
+
+% ===========================================
+% REQUIRED CITATIONS
+% These papers must be cited in the manuscript
+% ===========================================
+
+@article{author-year-hard,
+ title = {Hard ImageNet: Segmentations for Objects with Strong Spurious Cues}
+}
+
+@article{author-year-the,
+ title = {On the Adversarial Robustness of Out-of-distribution Generalization Models}
+}
+
+@article{azizmalayeri-2022-your,
+ abstract = {Out-of-distribution (OOD) detection has recently gained substantial attention
+due to the importance of identifying out-of-domain samples in reliability and
+safety. Although OOD detection methods have advanced by a great deal, they are
+still susceptible to adversarial examples, which is a violation of their
+purpose. To mitigate this issue, several defenses have recently been proposed.
+Nevertheless, these efforts remained ineffective, as their evaluations are
+based on either small perturbation sizes, or weak attacks. In this work, we
+re-examine these defenses against an end-to-end PGD attack on in/out data with
+larger perturbation sizes, e.g. up to commonly used $\epsilon=8/255$ for the
+CIFAR-10 dataset. Surprisingly, almost all of these defenses perform worse than
+a random detection under the adversarial setting. Next, we aim to provide a
+robust OOD detection method. In an ideal defense, the training should expose
+the model to almost all possible adversarial perturbations, which can be
+achieved through adversarial training. That is, such training perturbations
+should based on both in- and out-of-distribution samples. Therefore, unlike OOD
+detection in the standard setting, access to OOD, as well as in-distribution,
+samples sounds necessary in the adversarial training setup. These tips lead us
+to adopt generative OOD detection methods, such as OpenGAN, as a baseline. We
+subsequently propose the Adversarially Trained Discriminator (ATD), which
+utilizes a pre-trained robust model to extract robust features, and a generator
+model to create OOD samples. Using ATD with CIFAR-10 and CIFAR-100 as the
+in-distribution data, we could significantly outperform all previous methods in
+the robust AUROC while maintaining high standard AUROC and classification
+accuracy. The code repository is available at https://github.com/rohban-lab/ATD .},
+ arxiv_url = {https://arxiv.org/pdf/2209.15246v1.pdf},
+ author = {Mohammad Azizmalayeri and Arshia Soltani Moakhar and Arman Zarei and Reihaneh Zohrabi and Mohammad Taghi Manzuri and Mohammad Hossein Rohban},
+ github_url = {https://github.com/rohban-lab/ATD},
+ title = {Your Out-of-Distribution Detection Method is Not Robust!},
+ year = {2022}
+}
+
+@article{bitterwolf-2020-certifiably,
+ abstract = {Deep neural networks are known to be overconfident when applied to
+out-of-distribution (OOD) inputs which clearly do not belong to any class. This
+is a problem in safety-critical applications since a reliable assessment of the
+uncertainty of a classifier is a key property, allowing the system to trigger
+human intervention or to transfer into a safe state. In this paper, we aim for
+certifiable worst case guarantees for OOD detection by enforcing not only low
+confidence at the OOD point but also in an $l_\infty$-ball around it. For this
+purpose, we use interval bound propagation (IBP) to upper bound the maximal
+confidence in the $l_\infty$-ball and minimize this upper bound during training
+time. We show that non-trivial bounds on the confidence for OOD data
+generalizing beyond the OOD dataset seen at training time are possible.
+Moreover, in contrast to certified adversarial robustness which typically comes
+with significant loss in prediction performance, certified guarantees for worst
+case OOD detection are possible without much loss in accuracy.},
+ arxiv_url = {https://arxiv.org/pdf/2007.08473v3.pdf},
+ author = {Julian Bitterwolf and Alexander Meinke and Matthias Hein},
+ journal = {Advances in Neural Information Processing Systems 33 (NeurIPS
+  2020)},
+ title = {Certifiably Adversarially Robust Detection of Out-of-Distribution Data},
+ year = {2020}
+}
+
+@article{chen-2020-self,
+ abstract = {In unsupervised domain adaptation, existing theory focuses on situations
+where the source and target domains are close. In practice, conditional entropy
+minimization and pseudo-labeling work even when the domain shifts are much
+larger than those analyzed by existing theory. We identify and analyze one
+particular setting where the domain shift can be large, but these algorithms
+provably work: certain spurious features correlate with the label in the source
+domain but are independent of the label in the target. Our analysis considers
+linear classification where the spurious features are Gaussian and the
+non-spurious features are a mixture of log-concave distributions. For this
+setting, we prove that entropy minimization on unlabeled target data will avoid
+using the spurious feature if initialized with a decently accurate source
+classifier, even though the objective is non-convex and contains multiple bad
+local minima using the spurious features. We verify our theory for spurious
+domain shift tasks on semi-synthetic Celeb-A and MNIST datasets. Our results
+suggest that practitioners collect and self-train on large, diverse datasets to
+reduce biases in classifiers even if labeling is impractical.},
+ arxiv_url = {https://arxiv.org/pdf/2006.10032v3.pdf},
+ author = {Yining Chen and Colin Wei and Ananya Kumar and Tengyu Ma},
+ github_url = {https://github.com/cynnjjs/spurious_feature_NeuRIPS},
+ title = {Self-training Avoids Using Spurious Features Under Domain Shift},
+ year = {2020}
+}
+
+@article{fridovichkeil-2022-models,
+ abstract = {Improving the accuracy of deep neural networks (DNNs) on out-of-distribution
+(OOD) data is critical to an acceptance of deep learning (DL) in real world
+applications. It has been observed that accuracies on in-distribution (ID)
+versus OOD data follow a linear trend and models that outperform this baseline
+are exceptionally rare (and referred to as "effectively robust"). Recently,
+some promising approaches have been developed to improve OOD robustness: model
+pruning, data augmentation, and ensembling or zero-shot evaluating large
+pretrained models. However, there still is no clear understanding of the
+conditions on OOD data and model properties that are required to observe
+effective robustness. We approach this issue by conducting a comprehensive
+empirical study of diverse approaches that are known to impact OOD robustness
+on a broad range of natural and synthetic distribution shifts of CIFAR-10 and
+ImageNet. In particular, we view the "effective robustness puzzle" through a
+Fourier lens and ask how spectral properties of both models and OOD data
+influence the corresponding effective robustness. We find this Fourier lens
+offers some insight into why certain robust models, particularly those from the
+CLIP family, achieve OOD robustness. However, our analysis also makes clear
+that no known metric is consistently the best explanation (or even a strong
+explanation) of OOD robustness. Thus, to aid future research into the OOD
+puzzle, we address the gap in publicly-available models with effective
+robustness by introducing a set of pretrained models--RobustNets--with varying
+levels of OOD robustness.},
+ arxiv_url = {https://arxiv.org/pdf/2207.04075v1.pdf},
+ author = {Sara Fridovich-Keil and Brian R. Bartoldson and James Diffenderfer and Bhavya Kailkhura and Peer-Timo Bremer},
+ title = {Models Out of Line: A Fourier Lens on Distribution Shift Robustness},
+ year = {2022}
+}
+
+@article{ilse-2020-selecting,
+ abstract = {Machine learning models trained with purely observational data and the
+principle of empirical risk minimization \citep{vapnik_principles_1992} can
+fail to generalize to unseen domains. In this paper, we focus on the case where
+the problem arises through spurious correlation between the observed domains
+and the actual task labels. We find that many domain generalization methods do
+not explicitly take this spurious correlation into account. Instead, especially
+in more application-oriented research areas like medical imaging or robotics,
+data augmentation techniques that are based on heuristics are used to learn
+domain invariant features. To bridge the gap between theory and practice, we
+develop a causal perspective on the problem of domain generalization. We argue
+that causal concepts can be used to explain the success of data augmentation by
+describing how they can weaken the spurious correlation between the observed
+domains and the task labels. We demonstrate that data augmentation can serve as
+a tool for simulating interventional data. We use these theoretical insights to
+derive a simple algorithm that is able to select data augmentation techniques
+that will lead to better domain generalization.},
+ arxiv_url = {https://arxiv.org/pdf/2005.01856v4.pdf},
+ author = {Maximilian Ilse and Jakub M. Tomczak and Patrick Forré},
+ title = {Selecting Data Augmentation for Simulating Interventions},
+ year = {2020}
+}
+
+@article{kirichenko-2022-last,
+ abstract = {Neural network classifiers can largely rely on simple spurious features, such
+as backgrounds, to make predictions. However, even in these cases, we show that
+they still often learn core features associated with the desired attributes of
+the data, contrary to recent findings. Inspired by this insight, we demonstrate
+that simple last layer retraining can match or outperform state-of-the-art
+approaches on spurious correlation benchmarks, but with profoundly lower
+complexity and computational expenses. Moreover, we show that last layer
+retraining on large ImageNet-trained models can also significantly reduce
+reliance on background and texture information, improving robustness to
+covariate shift, after only minutes of training on a single GPU.},
+ arxiv_url = {https://arxiv.org/pdf/2204.02937v2.pdf},
+ author = {Polina Kirichenko and Pavel Izmailov and Andrew Gordon Wilson},
+ github_url = {https://github.com/facebookresearch/classifier-balancing},
+ title = {Last Layer Re-Training is Sufficient for Robustness to Spurious Correlations},
+ year = {2022}
+}
+
+@article{li-2023-oodrobustbench,
+ abstract = {Existing works have made great progress in improving adversarial robustness,
+but typically test their method only on data from the same distribution as the
+training data, i.e. in-distribution (ID) testing. As a result, it is unclear
+how such robustness generalizes under input distribution shifts, i.e.
+out-of-distribution (OOD) testing. This omission is concerning as such
+distribution shifts are unavoidable when methods are deployed in the wild. To
+address this issue we propose a benchmark named OODRobustBench to
+comprehensively assess OOD adversarial robustness using 23 dataset-wise shifts
+(i.e. naturalistic shifts in input distribution) and 6 threat-wise shifts
+(i.e., unforeseen adversarial threat models). OODRobustBench is used to assess
+706 robust models using 60.7K adversarial evaluations. This large-scale
+analysis shows that: 1) adversarial robustness suffers from a severe OOD
+generalization issue; 2) ID robustness correlates strongly with OOD robustness
+in a positive linear way. The latter enables the prediction of OOD robustness
+from ID robustness. We then predict and verify that existing methods are
+unlikely to achieve high OOD robustness. Novel methods are therefore required
+to achieve OOD robustness beyond our prediction. To facilitate the development
+of these methods, we investigate a wide range of techniques and identify
+several promising directions. Code and models are available at:
+https://github.com/OODRobustBench/OODRobustBench.},
+ arxiv_url = {https://arxiv.org/pdf/2310.12793v2.pdf},
+ author = {Lin Li and Yifei Wang and Chawin Sitawarin and Michael Spratling},
+ github_url = {https://github.com/OODRobustBench/OODRobustBench},
+ title = {OODRobustBench: a Benchmark and Large-Scale Analysis of Adversarial Robustness under Distribution Shift},
+ year = {2023}
+}
+
+@article{liang-2023-accuracy,
+ abstract = {Understanding the performance of machine learning (ML) models across diverse
+data distributions is critically important for reliable applications. Despite
+recent empirical studies positing a near-perfect linear correlation between
+in-distribution (ID) and out-of-distribution (OOD) accuracies, we empirically
+demonstrate that this correlation is more nuanced under subpopulation shifts.
+Through rigorous experimentation and analysis across a variety of datasets,
+models, and training epochs, we demonstrate that OOD performance often has a
+nonlinear correlation with ID performance in subpopulation shifts. Our
+findings, which contrast previous studies that have posited a linear
+correlation in model performance during distribution shifts, reveal a "moon
+shape" correlation (parabolic uptrend curve) between the test performance on
+the majority subpopulation and the minority subpopulation. This non-trivial
+nonlinear correlation holds across model architectures, hyperparameters,
+training durations, and the imbalance between subpopulations. Furthermore, we
+found that the nonlinearity of this "moon shape" is causally influenced by the
+degree of spurious correlations in the training data. Our controlled
+experiments show that stronger spurious correlation in the training data
+creates more nonlinear performance correlation. We provide complementary
+experimental and theoretical analyses for this phenomenon, and discuss its
+implications for ML reliability and fairness. Our work highlights the
+importance of understanding the nonlinear effects of model improvement on
+performance in different subpopulations, and has the potential to inform the
+development of more equitable and responsible machine learning models.},
+ arxiv_url = {https://arxiv.org/pdf/2305.02995v2.pdf},
+ author = {Weixin Liang and Yining Mao and Yongchan Kwon and Xinyu Yang and James Zou},
+ title = {Accuracy on the Curve: On the Nonlinear Correlation of ML Performance Between Data Subpopulations},
+ year = {2023}
+}
+
+@article{lippe-2022-causal,
+ abstract = {Causal representation learning is the task of identifying the underlying
+causal variables and their relations from high-dimensional observations, such
+as images. Recent work has shown that one can reconstruct the causal variables
+from temporal sequences of observations under the assumption that there are no
+instantaneous causal relations between them. In practical applications,
+however, our measurement or frame rate might be slower than many of the causal
+effects. This effectively creates "instantaneous" effects and invalidates
+previous identifiability results. To address this issue, we propose iCITRIS, a
+causal representation learning method that allows for instantaneous effects in
+intervened temporal sequences when intervention targets can be observed, e.g.,
+as actions of an agent. iCITRIS identifies the potentially multidimensional
+causal variables from temporal observations, while simultaneously using a
+differentiable causal discovery method to learn their causal graph. In
+experiments on three datasets of interactive systems, iCITRIS accurately
+identifies the causal variables and their causal graph.},
+ arxiv_url = {https://arxiv.org/pdf/2206.06169v2.pdf},
+ author = {Phillip Lippe and Sara Magliacane and Sindy Löwe and Yuki M. Asano and Taco Cohen and Efstratios Gavves},
+ title = {Causal Representation Learning for Instantaneous and Temporal Effects in Interactive Systems},
+ year = {2022}
+}
+
+@article{liu-2023-identifiable,
+ abstract = {Causal representation learning aims to unveil latent high-level causal
+representations from observed low-level data. One of its primary tasks is to
+provide reliable assurance of identifying these latent causal models, known as
+identifiability. A recent breakthrough explores identifiability by leveraging
+the change of causal influences among latent causal variables across multiple
+environments \citep{liu2022identifying}. However, this progress rests on the
+assumption that the causal relationships among latent causal variables adhere
+strictly to linear Gaussian models. In this paper, we extend the scope of
+latent causal models to involve nonlinear causal relationships, represented by
+polynomial models, and general noise distributions conforming to the
+exponential family. Additionally, we investigate the necessity of imposing
+changes on all causal parameters and present partial identifiability results
+when part of them remains unchanged. Further, we propose a novel empirical
+estimation method, grounded in our theoretical finding, that enables learning
+consistent latent causal representations. Our experimental results, obtained
+from both synthetic and real-world data, validate our theoretical contributions
+concerning identifiability and consistency.},
+ arxiv_url = {https://arxiv.org/pdf/2310.15580v3.pdf},
+ author = {Yuhang Liu and Zhen Zhang and Dong Gong and Mingming Gong and Biwei Huang and Anton van den Hengel and Kun Zhang and Javen Qinfeng Shi},
+ title = {Identifiable Latent Polynomial Causal Models through the Lens of Change},
+ year = {2023}
+}
+
+@article{meinke-2019-towards,
+ abstract = {It has recently been shown that ReLU networks produce arbitrarily
+over-confident predictions far away from the training data. Thus, ReLU networks
+do not know when they don't know. However, this is a highly important property
+in safety critical applications. In the context of out-of-distribution
+detection (OOD) there have been a number of proposals to mitigate this problem
+but none of them are able to make any mathematical guarantees. In this paper we
+propose a new approach to OOD which overcomes both problems. Our approach can
+be used with ReLU networks and provides provably low confidence predictions far
+away from the training data as well as the first certificates for low
+confidence predictions in a neighborhood of an out-distribution point. In the
+experiments we show that state-of-the-art methods fail in this worst-case
+setting whereas our model can guarantee its performance while retaining
+state-of-the-art OOD performance.},
+ arxiv_url = {https://arxiv.org/pdf/1909.12180v2.pdf},
+ author = {Alexander Meinke and Matthias Hein},
+ title = {Towards neural networks that provably know when they don't know},
+ year = {2019}
+}
+
+@article{morioka-2023-causal,
+ abstract = {A topic of great current interest is Causal Representation Learning (CRL),
+whose goal is to learn a causal model for hidden features in a data-driven
+manner. Unfortunately, CRL is severely ill-posed since it is a combination of
+the two notoriously ill-posed problems of representation learning and causal
+discovery. Yet, finding practical identifiability conditions that guarantee a
+unique solution is crucial for its practical applicability. Most approaches so
+far have been based on assumptions on the latent causal mechanisms, such as
+temporal causality, or existence of supervision or interventions; these can be
+too restrictive in actual applications. Here, we show identifiability based on
+novel, weak constraints, which requires no temporal structure, intervention,
+nor weak supervision. The approach is based on assuming the observational
+mixing exhibits a suitable grouping of the observational variables. We also
+propose a novel self-supervised estimation framework consistent with the model,
+prove its statistical consistency, and experimentally show its superior CRL
+performances compared to the state-of-the-art baselines. We further demonstrate
+its robustness against latent confounders and causal cycles.},
+ arxiv_url = {https://arxiv.org/pdf/2310.15709v2.pdf},
+ author = {Hiroshi Morioka and Aapo Hyvärinen},
+ github_url = {https://github.com/hmorioka/GCaRL},
+ title = {Causal Representation Learning Made Identifiable by Grouping of Observational Variables},
+ year = {2023}
+}
+
+@article{nagarajan-2020-understanding,
+ abstract = {Empirical studies suggest that machine learning models often rely on
+features, such as the background, that may be spuriously correlated with the
+label only during training time, resulting in poor accuracy during test-time.
+In this work, we identify the fundamental factors that give rise to this
+behavior, by explaining why models fail this way {\em even} in easy-to-learn
+tasks where one would expect these models to succeed. In particular, through a
+theoretical study of gradient-descent-trained linear classifiers on some
+easy-to-learn tasks, we uncover two complementary failure modes. These modes
+arise from how spurious correlations induce two kinds of skews in the data: one
+geometric in nature, and another, statistical in nature. Finally, we construct
+natural modifications of image classification datasets to understand when these
+failure modes can arise in practice. We also design experiments to isolate the
+two failure modes when training modern neural networks on these datasets.},
+ arxiv_url = {https://arxiv.org/pdf/2010.15775v3.pdf},
+ author = {Vaishnavh Nagarajan and Anders Andreassen and Behnam Neyshabur},
+ github_url = {https://github.com/google-research/OOD-failures},
+ title = {Understanding the failure modes of out-of-distribution generalization},
+ year = {2020}
+}
+
+@article{qiao-2024-understanding,
+ abstract = {Despite the rapid development of machine learning algorithms for domain
+generalization (DG), there is no clear empirical evidence that the existing DG
+algorithms outperform the classic empirical risk minimization (ERM) across
+standard benchmarks. To better understand this phenomenon, we investigate
+whether there are benefits of DG algorithms over ERM through the lens of label
+noise. Specifically, our finite-sample analysis reveals that label noise
+exacerbates the effect of spurious correlations for ERM, undermining
+generalization. Conversely, we illustrate that DG algorithms exhibit implicit
+label-noise robustness during finite-sample training even when spurious
+correlation is present. Such desirable property helps mitigate spurious
+correlations and improve generalization in synthetic experiments. However,
+additional comprehensive experiments on real-world benchmark datasets indicate
+that label-noise robustness does not necessarily translate to better
+performance compared to ERM. We conjecture that the failure mode of ERM arising
+from spurious correlations may be less pronounced in practice.},
+ arxiv_url = {https://arxiv.org/pdf/2401.14846v2.pdf},
+ author = {Rui Qiao and Bryan Kian Hsiang Low},
+ github_url = {https://github.com/qiaoruiyt/NoiseRobustDG},
+ title = {Understanding Domain Generalization: A Noise Robustness Perspective},
+ year = {2024}
+}
+
+@article{xu-2024-sparsity,
+ abstract = {Causal representation learning aims at identifying high-level causal
+variables from perceptual data. Most methods assume that all latent causal
+variables are captured in the high-dimensional observations. We instead
+consider a partially observed setting, in which each measurement only provides
+information about a subset of the underlying causal state. Prior work has
+studied this setting with multiple domains or views, each depending on a fixed
+subset of latents. Here, we focus on learning from unpaired observations from a
+dataset with an instance-dependent partial observability pattern. Our main
+contribution is to establish two identifiability results for this setting: one
+for linear mixing functions without parametric assumptions on the underlying
+causal model, and one for piecewise linear mixing functions with Gaussian
+latent causal variables. Based on these insights, we propose two methods for
+estimating the underlying causal variables by enforcing sparsity in the
+inferred representation. Experiments on different simulated datasets and
+established benchmarks highlight the effectiveness of our approach in
+recovering the ground-truth latents.},
+ arxiv_url = {https://arxiv.org/pdf/2403.08335v2.pdf},
+ author = {Danru Xu and Dingling Yao and Sébastien Lachapelle and Perouz Taslakian and Julius von Kügelgen and Francesco Locatello and Sara Magliacane},
+ github_url = {https://github.com/danrux/sparsity-crl},
+ title = {A Sparsity Principle for Partially Observable Causal Representation Learning},
+ year = {2024}
+}
+
+@article{yi-2021-improved,
+ abstract = {Recently, learning a model that generalizes well on out-of-distribution (OOD)
+data has attracted great attention in the machine learning community. In this
+paper, after defining OOD generalization via Wasserstein distance, we
+theoretically show that a model robust to input perturbation generalizes well
+on OOD data. Inspired by previous findings that adversarial training helps
+improve input-robustness, we theoretically show that adversarially trained
+models have converged excess risk on OOD data, and empirically verify it on
+both image classification and natural language understanding tasks. Besides, in
+the paradigm of first pre-training and then fine-tuning, we theoretically show
+that a pre-trained model that is more robust to input perturbation provides a
+better initialization for generalization on downstream OOD data. Empirically,
+after fine-tuning, this better-initialized model from adversarial pre-training
+also has better OOD generalization.},
+ arxiv_url = {https://arxiv.org/pdf/2105.11144v1.pdf},
+ author = {Mingyang Yi and Lu Hou and Jiacheng Sun and Lifeng Shang and Xin Jiang and Qun Liu and Zhi-Ming Ma},
+ title = {Improved OOD Generalization via Adversarial Training and Pretraing},
+ year = {2021}
+}
+
+@article{yu-2023-rethinking,
+ abstract = {Domain generalization aims to solve the challenge of Out-of-Distribution
+(OOD) generalization by leveraging common knowledge learned from multiple
+training domains to generalize to unseen test domains. To accurately evaluate
+the OOD generalization ability, it is required that test data information is
+unavailable. However, the current domain generalization protocol may still have
+potential test data information leakage. This paper examines the risks of test
+data information leakage from two aspects of the current evaluation protocol:
+supervised pretraining on ImageNet and oracle model selection. We propose
+modifications to the current protocol that we should employ self-supervised
+pretraining or train from scratch instead of employing the current supervised
+pretraining, and we should use multiple test domains. These would result in a
+more precise evaluation of OOD generalization ability. We also rerun the
+algorithms with the modified protocol and introduce new leaderboards to
+encourage future research in domain generalization with a fairer comparison.},
+ arxiv_url = {https://arxiv.org/pdf/2305.15253v2.pdf},
+ author = {Han Yu and Xingxuan Zhang and Renzhe Xu and Jiashuo Liu and Yue He and Peng Cui},
+ title = {Rethinking the Evaluation Protocol of Domain Generalization},
+ year = {2023}
+}
+
+@article{zhang-2024-causal,
+ abstract = {In many problems, the measured variables (e.g., image pixels) are just
+mathematical functions of the latent causal variables (e.g., the underlying
+concepts or objects). For the purpose of making predictions in changing
+environments or making proper changes to the system, it is helpful to recover
+the latent causal variables $Z_i$ and their causal relations represented by
+graph $\mathcal{G}_Z$. This problem has recently been known as causal
+representation learning. This paper is concerned with a general, completely
+nonparametric setting of causal representation learning from multiple
+distributions (arising from heterogeneous data or nonstationary time series),
+without assuming hard interventions behind distribution changes. We aim to
+develop general solutions in this fundamental case; as a by product, this helps
+see the unique benefit offered by other assumptions such as parametric causal
+models or hard interventions. We show that under the sparsity constraint on the
+recovered graph over the latent variables and suitable sufficient change
+conditions on the causal influences, interestingly, one can recover the
+moralized graph of the underlying directed acyclic graph, and the recovered
+latent variables and their relations are related to the underlying causal model
+in a specific, nontrivial way. In some cases, most latent variables can even be
+recovered up to component-wise transformations. Experimental results verify our
+theoretical claims.},
+ arxiv_url = {https://arxiv.org/pdf/2402.05052v3.pdf},
+ author = {Kun Zhang and Shaoan Xie and Ignavier Ng and Yujia Zheng},
+ title = {Causal Representation Learning from Multiple Distributions: A General Setting},
+ year = {2024}
+}
+
+@article{zhang-2024-metacoco,
+ abstract = {Out-of-distribution (OOD) problems in few-shot classification (FSC) occur
+when novel classes sampled from testing distributions differ from base classes
+drawn from training distributions, which considerably degrades the performance
+of deep learning models deployed in real-world applications. Recent studies
+suggest that the OOD problems in FSC mainly including: (a) cross-domain
+few-shot classification (CD-FSC) and (b) spurious-correlation few-shot
+classification (SC-FSC). Specifically, CD-FSC occurs when a classifier learns
+transferring knowledge from base classes drawn from seen training distributions
+but recognizes novel classes sampled from unseen testing distributions. In
+contrast, SC-FSC arises when a classifier relies on non-causal features (or
+contexts) that happen to be correlated with the labels (or concepts) in base
+classes but such relationships no longer hold during the model deployment.
+Despite CD-FSC has been extensively studied, SC-FSC remains understudied due to
+lack of the corresponding evaluation benchmarks. To this end, we present Meta
+Concept Context (MetaCoCo), a benchmark with spurious-correlation shifts
+collected from real-world scenarios. Moreover, to quantify the extent of
+spurious-correlation shifts of the presented MetaCoCo, we further propose a
+metric by using CLIP as a pre-trained vision-language model. Extensive
+experiments on the proposed benchmark are performed to evaluate the
+state-of-the-art methods in FSC, cross-domain shifts, and self-supervised
+learning. The experimental results show that the performance of the existing
+methods degrades significantly in the presence of spurious-correlation shifts.
+We open-source all codes of our benchmark and hope that the proposed MetaCoCo
+can facilitate future research on spurious-correlation shifts problems in FSC.
+The code is available at: https://github.com/remiMZ/MetaCoCo-ICLR24.},
+ arxiv_url = {https://arxiv.org/pdf/2404.19644v1.pdf},
+ author = {Min Zhang and Haoxuan Li and Fei Wu and Kun Kuang},
+ github_url = {https://github.com/remiMZ/MetaCoCo-ICLR24},
+ title = {MetaCoCo: A New Few-Shot Classification Benchmark with Spurious Correlation},
+ year = {2024}
+}
+
+% ===========================================
+% REFERENCE CANDIDATES
+% Additional reference papers for context
+% ===========================================
+
+@article{albuquerque-2019-generalizing,
+ abstract = {Supervised learning results typically rely on assumptions of i.i.d. data.
+Unfortunately, those assumptions are commonly violated in practice. In this
+work, we tackle such problem by focusing on domain generalization: a
+formalization where the data generating process at test time may yield samples
+from never-before-seen domains (distributions). Our work relies on the
+following lemma: by minimizing a notion of discrepancy between all pairs from a
+set of given domains, we also minimize the discrepancy between any pairs of
+mixtures of domains. Using this result, we derive a generalization bound for
+our setting. We then show that low risk over unseen domains can be achieved by
+representing the data in a space where (i) the training distributions are
+indistinguishable, and (ii) relevant information for the task at hand is
+preserved. Minimizing the terms in our bound yields an adversarial formulation
+which estimates and minimizes pairwise discrepancies. We validate our proposed
+strategy on standard domain generalization benchmarks, outperforming a number
+of recently introduced methods. Notably, we tackle a real-world application
+where the underlying data corresponds to multi-channel electroencephalography
+time series from different subjects, each considered as a distinct domain.},
+ arxiv_url = {https://arxiv.org/pdf/1911.00804v6.pdf},
+ author = {Isabela Albuquerque and João Monteiro and Mohammad Darvishi and Tiago H. Falk and Ioannis Mitliagkas},
+ title = {Generalizing to unseen domains via distribution matching},
+ year = {2019}
+}
+
+@article{arjovsky-2019-invariant,
+ abstract = {We introduce Invariant Risk Minimization (IRM), a learning paradigm to
+estimate invariant correlations across multiple training distributions. To
+achieve this goal, IRM learns a data representation such that the optimal
+classifier, on top of that data representation, matches for all training
+distributions. Through theory and experiments, we show how the invariances
+learned by IRM relate to the causal structures governing the data and enable
+out-of-distribution generalization.},
+ arxiv_url = {https://arxiv.org/pdf/1907.02893v3.pdf},
+ author = {Martin Arjovsky and Léon Bottou and Ishaan Gulrajani and David Lopez-Paz},
+ title = {Invariant risk minimization},
+ year = {2019}
+}
+
+@article{arpit-2017-closer,
+ abstract = {We examine the role of memorization in deep learning, drawing connections to
+capacity, generalization, and adversarial robustness. While deep networks are
+capable of memorizing noise data, our results suggest that they tend to
+prioritize learning simple patterns first. In our experiments, we expose
+qualitative differences in gradient-based optimization of deep neural networks
+(DNNs) on noise vs. real data. We also demonstrate that for appropriately tuned
+explicit regularization (e.g., dropout) we can degrade DNN training performance
+on noise datasets without compromising generalization on real data. Our
+analysis suggests that the notions of effective capacity which are dataset
+independent are unlikely to explain the generalization performance of deep
+networks when trained with gradient based methods because training data itself
+plays an important role in determining the degree of memorization.},
+ arxiv_url = {https://arxiv.org/pdf/1706.05394v2.pdf},
+ author = {Devansh Arpit and Stanisław Jastrzębski and Nicolas Ballas and David Krueger and Emmanuel Bengio and Maxinder S. Kanwal and Tegan Maharaj and Asja Fischer and Aaron Courville and Yoshua Bengio and Simon Lacoste-Julien},
+ title = {A closer look at memorization in deep networks},
+ year = {2017}
+}
+
+@article{asadi-2019-towards,
+ abstract = {It is known that, without awareness of the process, our brain appears to
+focus on the general shape of objects rather than superficial statistics of
+context. On the other hand, learning autonomously allows discovering invariant
+regularities which help generalization. In this work, we propose a learning
+framework to improve the shape bias property of self-supervised methods. Our
+method learns semantic and shape biased representations by integrating domain
+diversification and jigsaw puzzles. The first module enables the model to
+create a dynamic environment across arbitrary domains and provides a domain
+exploration vs. exploitation trade-off, while the second module allows the
+model to explore this environment autonomously. This universal framework does
+not require prior knowledge of the domain of interest. Extensive experiments
+are conducted on several domain generalization datasets, namely, PACS,
+Office-Home, VLCS, and Digits. We show that our framework outperforms
+state-of-the-art domain generalization methods by a large margin.},
+ arxiv_url = {https://arxiv.org/pdf/1909.08245v2.pdf},
+ author = {Nader Asadi and Amir M. Sarfi and Mehrdad Hosseinzadeh and Zahra Karimpour and Mahdi Eftekhari},
+ title = {Towards shape biased unsupervised representation learning for domain generalization},
+ year = {2019}
+}
+
+@article{author-year-unbiased,
+ title = {Unbiased metric learning: On the utilization of multiple datasets and web images for softening bias}
+}
+
+@article{beery-2018-recognition,
+ abstract = {It is desirable for detection and classification algorithms to generalize to
+unfamiliar environments, but suitable benchmarks for quantitatively studying
+this phenomenon are not yet available. We present a dataset designed to measure
+recognition generalization to novel environments. The images in our dataset are
+harvested from twenty camera traps deployed to monitor animal populations.
+Camera traps are fixed at one location, hence the background changes little
+across images; capture is triggered automatically, hence there is no human
+bias. The challenge is learning recognition in a handful of locations, and
+generalizing animal detection and classification to new locations where no
+training data is available. In our experiments state-of-the-art algorithms show
+excellent performance when tested at the same location where they were trained.
+However, we find that generalization to new locations is poor, especially for
+classification systems.},
+ arxiv_url = {https://arxiv.org/pdf/1807.04975v2.pdf},
+ author = {Sara Beery and Grant van Horn and Pietro Perona},
+ title = {Recognition in terra incognita},
+ year = {2018}
+}
+
+@article{ganin-2015-domain,
+ abstract = {We introduce a new representation learning approach for domain adaptation, in
+which data at training and test time come from similar but different
+distributions. Our approach is directly inspired by the theory on domain
+adaptation suggesting that, for effective domain transfer to be achieved,
+predictions must be made based on features that cannot discriminate between the
+training (source) and test (target) domains. The approach implements this idea
+in the context of neural network architectures that are trained on labeled data
+from the source domain and unlabeled data from the target domain (no labeled
+target-domain data is necessary). As the training progresses, the approach
+promotes the emergence of features that are (i) discriminative for the main
+learning task on the source domain and (ii) indiscriminate with respect to the
+shift between the domains. We show that this adaptation behaviour can be
+achieved in almost any feed-forward model by augmenting it with few standard
+layers and a new gradient reversal layer. The resulting augmented architecture
+can be trained using standard backpropagation and stochastic gradient descent,
+and can thus be implemented with little effort using any of the deep learning
+packages. We demonstrate the success of our approach for two distinct
+classification problems (document sentiment analysis and image classification),
+where state-of-the-art domain adaptation performance on standard benchmarks is
+achieved. We also validate the approach for descriptor learning task in the
+context of person re-identification application.},
+ arxiv_url = {https://arxiv.org/pdf/1505.07818v4.pdf},
+ author = {Yaroslav Ganin and Evgeniya Ustinova and Hana Ajakan and Pascal Germain and Hugo Larochelle and François Laviolette and Mario Marchand and Victor Lempitsky},
+ journal = {Journal of Machine Learning Research 2016, vol. 17, p. 1-35},
+ title = {Domain-adversarial training of neural networks},
+ year = {2015}
+}
+
+@article{geirhos-2020-shortcut,
+ abstract = {Deep learning has triggered the current rise of artificial intelligence and
+is the workhorse of today's machine intelligence. Numerous success stories have
+rapidly spread all over science, industry and society, but its limitations have
+only recently come into focus. In this perspective we seek to distill how many
+of deep learning's problems can be seen as different symptoms of the same
+underlying problem: shortcut learning. Shortcuts are decision rules that
+perform well on standard benchmarks but fail to transfer to more challenging
+testing conditions, such as real-world scenarios. Related issues are known in
+Comparative Psychology, Education and Linguistics, suggesting that shortcut
+learning may be a common characteristic of learning systems, biological and
+artificial alike. Based on these observations, we develop a set of
+recommendations for model interpretation and benchmarking, highlighting recent
+advances in machine learning to improve robustness and transferability from the
+lab to real-world applications.},
+ arxiv_url = {https://arxiv.org/pdf/2004.07780v5.pdf},
+ author = {Robert Geirhos and Jörn-Henrik Jacobsen and Claudio Michaelis and Richard Zemel and Wieland Brendel and Matthias Bethge and Felix A. Wichmann},
+ doi = {10.1038/s42256-020-00257-z},
+ title = {Shortcut learning in deep neural networks},
+ year = {2020}
+}
+
+@article{gulrajani-2020-search,
+ abstract = {The goal of domain generalization algorithms is to predict well on
+distributions different from those seen during training. While a myriad of
+domain generalization algorithms exist, inconsistencies in experimental
+conditions -- datasets, architectures, and model selection criteria -- render
+fair and realistic comparisons difficult. In this paper, we are interested in
+understanding how useful domain generalization algorithms are in realistic
+settings. As a first step, we realize that model selection is non-trivial for
+domain generalization tasks. Contrary to prior work, we argue that domain
+generalization algorithms without a model selection strategy should be regarded
+as incomplete. Next, we implement DomainBed, a testbed for domain
+generalization including seven multi-domain datasets, nine baseline algorithms,
+and three model selection criteria. We conduct extensive experiments using
+DomainBed and find that, when carefully implemented, empirical risk
+minimization shows state-of-the-art performance across all datasets. Looking
+forward, we hope that the release of DomainBed, along with contributions from
+fellow researchers, will streamline reproducible and rigorous research in
+domain generalization.},
+ arxiv_url = {https://arxiv.org/pdf/2007.01434v1.pdf},
+ author = {Ishaan Gulrajani and David Lopez-Paz},
+ title = {In search of lost domain generalization},
+ year = {2020}
+}
+
+@article{hendrycks-2019-benchmarking,
+ abstract = {In this paper we establish rigorous benchmarks for image classifier
+robustness. Our first benchmark, ImageNet-C, standardizes and expands the
+corruption robustness topic, while showing which classifiers are preferable in
+safety-critical applications. Then we propose a new dataset called ImageNet-P
+which enables researchers to benchmark a classifier's robustness to common
+perturbations. Unlike recent robustness research, this benchmark evaluates
+performance on common corruptions and perturbations not worst-case adversarial
+perturbations. We find that there are negligible changes in relative corruption
+robustness from AlexNet classifiers to ResNet classifiers. Afterward we
+discover ways to enhance corruption and perturbation robustness. We even find
+that a bypassed adversarial defense provides substantial common perturbation
+robustness. Together our benchmarks may aid future work toward networks that
+robustly generalize.},
+ arxiv_url = {https://arxiv.org/pdf/1903.12261v1.pdf},
+ author = {Dan Hendrycks and Thomas Dietterich},
+ title = {Benchmarking neural network robustness to common corruptions and perturbations},
+ year = {2019}
+}
+
+@article{hermann-2020-what,
+ abstract = {In naturalistic learning problems, a model's input contains a wide range of
+features, some useful for the task at hand, and others not. Of the useful
+features, which ones does the model use? Of the task-irrelevant features, which
+ones does the model represent? Answers to these questions are important for
+understanding the basis of models' decisions, as well as for building models
+that learn versatile, adaptable representations useful beyond the original
+training task. We study these questions using synthetic datasets in which the
+task-relevance of input features can be controlled directly. We find that when
+two features redundantly predict the labels, the model preferentially
+represents one, and its preference reflects what was most linearly decodable
+from the untrained model. Over training, task-relevant features are enhanced,
+and task-irrelevant features are partially suppressed. Interestingly, in some
+cases, an easier, weakly predictive feature can suppress a more strongly
+predictive, but more difficult one. Additionally, models trained to recognize
+both easy and hard features learn representations most similar to models that
+use only the easy feature. Further, easy features lead to more consistent
+representations across model runs than do hard features. Finally, models have
+greater representational similarity to an untrained model than to models
+trained on a different task. Our results highlight the complex processes that
+determine which features a model represents.},
+ arxiv_url = {https://arxiv.org/pdf/2006.12433v2.pdf},
+ author = {Katherine L. Hermann and Andrew K. Lampinen},
+ title = {What shapes feature representations? exploring datasets, architectures, and training},
+ year = {2020}
+}
+
+@article{ilyas-2019-adversarial,
+ abstract = {Adversarial examples have attracted significant attention in machine
+learning, but the reasons for their existence and pervasiveness remain unclear.
+We demonstrate that adversarial examples can be directly attributed to the
+presence of non-robust features: features derived from patterns in the data
+distribution that are highly predictive, yet brittle and incomprehensible to
+humans. After capturing these features within a theoretical framework, we
+establish their widespread existence in standard datasets. Finally, we present
+a simple setting where we can rigorously tie the phenomena we observe in
+practice to a misalignment between the (human-specified) notion of robustness
+and the inherent geometry of the data.},
+ arxiv_url = {https://arxiv.org/pdf/1905.02175v4.pdf},
+ author = {Andrew Ilyas and Shibani Santurkar and Dimitris Tsipras and Logan Engstrom and Brandon Tran and Aleksander Madry},
+ title = {Adversarial examples are not bugs, they are features},
+ year = {2019}
+}
+
+@article{ji-2018-risk,
+ abstract = {Gradient descent, when applied to the task of logistic regression, outputs
+iterates which are biased to follow a unique ray defined by the data. The
+direction of this ray is the maximum margin predictor of a maximal linearly
+separable subset of the data; the gradient descent iterates converge to this
+ray in direction at the rate $\mathcal{O}(\ln\ln t / \ln t)$. The ray does not
+pass through the origin in general, and its offset is the bounded global
+optimum of the risk over the remaining data; gradient descent recovers this
+offset at a rate $\mathcal{O}((\ln t)^2 / \sqrt{t})$.},
+ arxiv_url = {https://arxiv.org/pdf/1803.07300v3.pdf},
+ author = {Ziwei Ji and Matus Telgarsky},
+ title = {Risk and parameter convergence of logistic regression},
+ year = {2018}
+}
+
+@article{khani-2019-feature,
+ abstract = {The performance of standard learning procedures has been observed to differ
+widely across groups. Recent studies usually attribute this loss discrepancy to
+an information deficiency for one group (e.g., one group has less data). In
+this work, we point to a more subtle source of loss discrepancy---feature
+noise. Our main result is that even when there is no information deficiency
+specific to one group (e.g., both groups have infinite data), adding the same
+amount of feature noise to all individuals leads to loss discrepancy. For
+linear regression, we thoroughly characterize the effect of feature noise on
+loss discrepancy in terms of the amount of noise, the difference between
+moments of the two groups, and whether group information is used or not. We
+then show this loss discrepancy does not vanish immediately if a shift in
+distribution causes the groups to have similar moments. On three real-world
+datasets, we show feature noise increases the loss discrepancy if groups have
+different distributions, while it does not affect the loss discrepancy on
+datasets where groups have similar distributions.},
+ arxiv_url = {https://arxiv.org/pdf/1911.09876v2.pdf},
+ author = {Fereshte Khani and Percy Liang},
+ title = {Feature noise induces loss discrepancy across groups},
+ year = {2019}
+}
+
+@article{nakkiran-2019-sgd,
+ abstract = {We perform an experimental study of the dynamics of Stochastic Gradient
+Descent (SGD) in learning deep neural networks for several real and synthetic
+classification tasks. We show that in the initial epochs, almost all of the
+performance improvement of the classifier obtained by SGD can be explained by a
+linear classifier. More generally, we give evidence for the hypothesis that, as
+iterations progress, SGD learns functions of increasing complexity. This
+hypothesis can be helpful in explaining why SGD-learned classifiers tend to
+generalize well even in the over-parameterized regime. We also show that the
+linear classifier learned in the initial stages is "retained" throughout the
+execution even if training is continued to the point of zero training error,
+and complement this with a theoretical result in a simplified model. Key to our
+work is a new measure of how well one classifier explains the performance of
+another, based on conditional mutual information.},
+ arxiv_url = {https://arxiv.org/pdf/1905.11604v1.pdf},
+ author = {Preetum Nakkiran and Gal Kaplun and Dimitris Kalimeris and Tristan Yang and Benjamin L. Edelman and Fred Zhang and Boaz Barak},
+ title = {SGD on neural networks learns functions of increasing complexity},
+ year = {2019}
+}
