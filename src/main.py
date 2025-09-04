@@ -79,7 +79,7 @@ def main():
             accs.append(result["acc"])
 
         print(
-            f"Test accuracy mean±std: {np.mean(accs):.3f} ± {np.std(accs):.3f}\nFigures saved in .research/iteration5/images."
+            f"Test accuracy mean±std: {np.mean(accs):.3f} ± {np.std(accs):.3f}\nFigures saved in .research/iteration6/images."
         )
 
 

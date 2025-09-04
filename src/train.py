@@ -9,9 +9,28 @@ from typing import Dict, Any, List, Tuple
 import numpy as np
 import torch
 from torch import nn
-from torch_geometric.nn import MessagePassing, PairNorm
-from torch_sparse import SparseTensor
-from torch_scatter import scatter_mean
+from torch_geometric.nn import MessagePassing
+# NOTE: We intentionally avoid importing torch_sparse / torch_scatter to
+#       keep the dependency list lean and compilation-free.
+
+# -----------------------------------------------------------------------------
+# Utility helpers (self-contained, avoid external scatter dependencies)
+# -----------------------------------------------------------------------------
+
+def _scatter_mean(src: torch.Tensor, index: torch.Tensor, dim_size: int) -> torch.Tensor:
+    """Simple replacement for torch_scatter.scatter_mean for 1-D tensors.
+    Args:
+        src: Values to aggregate (E,)
+        index: Indices indicating the target location of each *src* entry (E,)
+        dim_size: Number of output rows (N)
+    Returns:
+        Tensor of shape (N,) where output[i] is the mean of src[j] for which
+        index[j] == i. Empty rows get 0.
+    """
+    device = src.device
+    sum_per_index = torch.zeros(dim_size, device=device).index_add_(0, index, src)
+    count = torch.bincount(index, minlength=dim_size).clamp_min(1).to(src.dtype)
+    return sum_per_index / count
 
 # -----------------------------------------------------------------------------
 # CurvAMP building blocks
@@ -22,7 +41,7 @@ def _approx_node_curvature(edge_index: torch.Tensor, num_nodes: int) -> torch.Te
     row, col = edge_index
     deg = torch.bincount(row, minlength=num_nodes).float()
     curv = 1.0 / (deg[row] + 1e-6) + 1.0 / (deg[col] + 1e-6)
-    return scatter_mean(curv, row, dim=0, dim_size=num_nodes)
+    return _scatter_mean(curv, row, num_nodes)
 
 
 class CurvPair(nn.Module):
@@ -76,39 +95,40 @@ class CurvAMPConv(MessagePassing):
                 nn.init.xavier_uniform_(m.weight)
 
     # ------------------------------------------------------------------
-    def forward(
-        self, x: torch.Tensor, edge_index: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor, edge_index: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """Returns: (updated features, possibly rewired edge_index)."""
         num_nodes = x.size(0)
-        # 1) multi-scale bank (cheap adjacency powers)
-        A = SparseTensor(
-            row=edge_index[0], col=edge_index[1], sparse_sizes=(num_nodes, num_nodes)
-        )
+        row, col = edge_index  # (E,)
+
+        # 1) Build sparse adjacency once using torch native sparse COO
+        values = torch.ones(row.size(0), device=x.device)
+        A = torch.sparse_coo_tensor(edge_index, values, (num_nodes, num_nodes))
+
+        # Multi-scale bank (cheap adjacency powers)
         bank = [x]
+        h = x
         for _ in range(1, self.K):
-            x = A @ x
-            bank.append(x)
-        bank_proj = [lin(h) for lin, h in zip(self.lins, bank)]
+            h = torch.sparse.mm(A, h)
+            bank.append(h)
+        bank_proj = [lin(hk) for lin, hk in zip(self.lins, bank)]
 
         # 2) curvature gate
         kappa = _approx_node_curvature(edge_index, num_nodes)
-        deg = A.sum(dim=1).to(torch.float)
+        deg = torch.bincount(row, minlength=num_nodes).float()
         gate_in = torch.stack([kappa, deg], dim=1)  # (N,2)
         alpha = torch.softmax(self.gate(gate_in), dim=-1)  # (N,K)
         out = sum(alpha[:, k : k + 1] * bank_proj[k] for k in range(self.K))
 
         # 3) online micro-rewiring (forward only)
         with torch.no_grad():
-            row, col = edge_index
             curv_edges = -(kappa[row] + kappa[col])  # large negative curvature ⇒ candidate
-            m = int(self.rewired_ratio * edge_index.size(1))
+            m = int(self.rewired_ratio * row.size(0))
             if m > 0:
                 _, idx = torch.topk(curv_edges, k=m, largest=True)
                 new_edges = torch.stack([row[idx], col[idx]], dim=0)
                 edge_index = torch.cat([edge_index, new_edges], dim=1)
 
-        # 4) CurvPair
+        # 4) CurvPair normalisation
         out = self.norm(out, kappa)
         return out, edge_index
 

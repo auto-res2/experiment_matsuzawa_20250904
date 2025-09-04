@@ -60,7 +60,7 @@ def ater(edge_index: torch.Tensor, num_nodes: int) -> float:
 #  Plotting helpers
 # -----------------------------------------------------------------------------
 
-_FIG_DIR = Path(".research/iteration5/images")
+_FIG_DIR = Path(".research/iteration6/images")
 _FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
