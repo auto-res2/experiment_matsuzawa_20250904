@@ -10,6 +10,7 @@ import json
 import sys
 import time
 from pathlib import Path
+from typing import Tuple
 
 import pandas as pd
 import torch
@@ -50,19 +51,37 @@ def load_cfg() -> dict:
 
 
 # -----------------------------------------------------------------------------
-#  MAIN EXPERIMENT LOOP
+#  UTILS
 # -----------------------------------------------------------------------------
 
 def _to_float(val):
-    """Utility: cast *val* to float unless it is already numeric.
-
-    Torch's optimisers expect `lr`, `momentum`, `weight_decay`, … to be floats.
-    When the YAML parser reads numbers that look like strings (e.g. "5e-4")
-    they may be returned as *str* on some versions/platforms.  Converting here
-    guarantees compatibility regardless of upstream behaviour.
-    """
+    """Utility: cast *val* to float unless it is already numeric."""
     return float(val) if isinstance(val, str) else val
 
+
+def _guess_dummy_input(dataset_key: str) -> Tuple[torch.Tensor, str]:
+    """Return a dummy tensor appropriate for *dataset_key* and its modality."""
+    key = dataset_key.lower()
+    if key.startswith("permuted") or "mnist" in key:
+        dummy = torch.randn(1, 1, 28, 28)
+    else:
+        dummy = torch.randn(1, 3, 32, 32)
+    return dummy, key
+
+
+def _infer_feature_dim(model: nn.Module, dataset_key: str, device: torch.device) -> int:
+    """Run a dummy pass through `model.get_features` to measure feature dimensionality."""
+    model.eval()
+    dummy, _ = _guess_dummy_input(dataset_key)
+    dummy = dummy.to(device)
+    with torch.no_grad():
+        feats = model.get_features(dummy)
+    return feats.reshape(feats.size(0), -1).size(1)
+
+
+# -----------------------------------------------------------------------------
+#  MAIN EXPERIMENT LOOP
+# -----------------------------------------------------------------------------
 
 def run_experiment() -> None:
     cfg = load_cfg()
@@ -98,6 +117,10 @@ Each vision task: 5 epochs   MNIST: 1 epoch
             for seed in cfg["seed"]:
                 set_seed(seed)
                 model = build_model(dataset_key).to(device)
+
+                # Dynamically determine feature dimensionality for CPQR
+                feat_dim = _infer_feature_dim(model, dataset_key, device)
+
                 optimizer = torch.optim.SGD(
                     model.parameters(),
                     lr=_to_float(cfg["optim"]["lr"]),
@@ -105,7 +128,7 @@ Each vision task: 5 epochs   MNIST: 1 epoch
                     weight_decay=_to_float(cfg["optim"]["weight_decay"]),
                 )
                 cpqr = CPQRBuffer(
-                    dim=cfg["cpqr"]["dim"],
+                    dim=feat_dim,
                     M=cfg["cpqr"]["M"],
                     codebook_size=cfg["cpqr"]["codebook_size"],
                     max_bytes=max_bytes,

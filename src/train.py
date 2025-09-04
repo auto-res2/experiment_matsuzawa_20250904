@@ -173,6 +173,15 @@ except ModuleNotFoundError:  # pragma: no cover
     from avalanche.evaluation.plugins import EvaluationPlugin  # type: ignore
 
 
+def _logits_from_features(model: nn.Module, feats: torch.Tensor) -> torch.Tensor:
+    """Utility that returns class logits from pre-computed *features*."""
+    if hasattr(model, "fc"):
+        return model.fc(feats)
+    if hasattr(model, "classifier"):
+        return model.classifier(feats)  # type: ignore[attr-defined]
+    raise AttributeError("Model does not expose a classifier head named 'fc' or 'classifier'.")
+
+
 def make_replay_strategy(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
@@ -195,23 +204,27 @@ def make_replay_strategy(
 
         # ----- called by Avalanche --------------------------------------------------
         def before_backward(self, strategy, **kwargs):  # noqa: D401, N802
-            # store current mini-batch *features* in the buffer
+            """(1) Store current mini-batch features; (2) add replay loss."""
+            # 1) store features from current images
             with torch.no_grad():
                 feats = strategy.model.get_features(strategy.mb_x)
             self.cpqr.add_batch(feats, strategy.mb_y)
 
-        def before_training_iteration(self, strategy, **kwargs):  # noqa: D401, N802
+            # 2) replay loss if buffer not empty
             if len(self.cpqr._indices) == 0:
-                return  # nothing to replay yet
-            feats, lbl = self.cpqr.sample(self.replay_size)
-            strategy.mb_x = torch.cat([strategy.mb_x, feats], 0)
-            strategy.mb_y = torch.cat([strategy.mb_y, lbl], 0)
+                return
+            rep_feats, rep_lbl = self.cpqr.sample(self.replay_size)
+            rep_feats = rep_feats.to(next(strategy.model.parameters()).dtype)
+            logits_rep = _logits_from_features(strategy.model, rep_feats)
+            replay_loss = strategy.criterion(logits_rep, rep_lbl)
+            # Combine with current loss
+            strategy.loss = strategy.loss + replay_loss
 
     plugins = [CPQRPlugin(buffer)]
     return Replay(
-        model,
-        optimizer,
-        criterion,
+        model=model,
+        optimizer=optimizer,
+        criterion=criterion,
         mem_size=1,  # unused but mandatory arg
         plugins=plugins,
         train_mb_size=mb_size,
@@ -231,8 +244,8 @@ def build_model(dataset_key: str) -> nn.Module:
     if dataset_key.lower().startswith("permuted"):
         from avalanche.models import MLP
 
-        model = MLP(num_classes=10, hidden_size=400)
-        # for an MLP the penultimate layer is simply the *last* hidden features
+        model: nn.Module = MLP(num_classes=10, hidden_size=400)  # type: ignore[assignment]
+
         def _get_feats(x, m=model):  # noqa: E306
             return m.feature_extractor(x)  # type: ignore
 
@@ -248,11 +261,18 @@ def build_model(dataset_key: str) -> nn.Module:
     model.fc = nn.Linear(in_dim, 100)  # will be adapted if needed by Avalanche
 
     def _get_feats(x, m=model):  # noqa: E306
-        # torchvision >=0.13 exposes `forward_features`.  For older versions fall
-        # back to the protected implementation used by the original authors.
-        if hasattr(m, "forward_features"):
-            return m.forward_features(x)  # type: ignore[attr-defined]
-        return m._forward_impl(x)  # type: ignore[attr-defined]
+        # Manually reproduce the forward pass up to (and incl.) the global pooling
+        x = m.conv1(x)
+        x = m.bn1(x)
+        x = m.relu(x)
+        x = m.maxpool(x)
+        x = m.layer1(x)
+        x = m.layer2(x)
+        x = m.layer3(x)
+        x = m.layer4(x)
+        x = m.avgpool(x)
+        x = torch.flatten(x, 1)
+        return x
 
     model.get_features = _get_feats  # type: ignore[attr-defined]
     return model
