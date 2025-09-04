@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 preprocess.py – data handling & download helpers
 -----------------------------------------------
@@ -5,7 +7,6 @@ Currently provides Split-CIFAR-100 which is the only dataset used by the paper
 snippet.  Extending to additional datasets only requires adding another class
 and wiring it in train.py.
 """
-from __future__ import annotations
 
 import hashlib
 import tarfile
@@ -23,10 +24,12 @@ from torchvision.datasets import CIFAR100
 #  Global paths (created on import)
 # ---------------------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent.parent
+# All figures must be stored under .research/iteration2/images as per spec.
+FIG_ROOT = ROOT / ".research" / "iteration2" / "images"
 DATA_ROOT = ROOT / "data"
-FIG_ROOT = ROOT / "figures"
 CKPT_ROOT = ROOT / "checkpoints"
-for _p in (DATA_ROOT, FIG_ROOT, CKPT_ROOT):
+
+for _p in (FIG_ROOT, DATA_ROOT, CKPT_ROOT):
     _p.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
@@ -39,6 +42,7 @@ def _sha1(path: Path, chunk_size: int = 1_048_576) -> str:
         for chunk in iter(lambda: f.read(chunk_size), b""):
             h.update(chunk)
     return h.hexdigest()
+
 
 def download(url: str, dest: Path, *, sha1: Optional[str] = None) -> Path:
     dest.parent.mkdir(parents=True, exist_ok=True)

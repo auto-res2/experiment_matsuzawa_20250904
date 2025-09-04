@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 main.py – orchestrates the full experimental grid
 -------------------------------------------------
@@ -5,16 +7,18 @@ Reads *config/config.yaml* to build the list of experiments, then calls
 run_single_experiment from train.py.  Aggregation, pretty printing and Pareto
 plot are handled here as they are strictly evaluation-level tasks.
 """
-from __future__ import annotations
 
 import sys
+from dataclasses import asdict  # Needed for YAML serialisation
+from pathlib import Path
+from typing import List, Dict
+
 import yaml
 import numpy as np
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-from pathlib import Path
-from typing import List, Dict
 
 from .train import (
     run_single_experiment,
