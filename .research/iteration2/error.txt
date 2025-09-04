@@ -1,0 +1,69 @@
+
+A module that was compiled using NumPy 1.x cannot be run in
+NumPy 2.3.2 as it may crash. To support both 1.x and 2.x
+versions of NumPy, modules must be compiled with NumPy 2.0.
+Some module may need to rebuild instead e.g. with 'pybind11>=2.12'.
+
+If you are a user of the module, the easiest solution will be to
+downgrade to 'numpy<2' or try to upgrade the affected module.
+We expect that some modules will need time to support NumPy 2.
+
+Traceback (most recent call last):  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 12, in <module>
+    from .evaluate import run_exp1
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/evaluate.py", line 20, in <module>
+    from .preprocess import COMMON, load_dataset, set_global_seed, ensure_image_dir
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/preprocess.py", line 14, in <module>
+    from torch_geometric.datasets import Planetoid, WikipediaNetwork, WebKB  # type: ignore
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch_geometric/__init__.py", line 6, in <module>
+    import torch_geometric.datasets
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch_geometric/datasets/__init__.py", line 17, in <module>
+    from .qm9 import QM9
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch_geometric/datasets/qm9.py", line 20, in <module>
+    conversion = torch.tensor([
+/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch_geometric/datasets/qm9.py:20: UserWarning: Failed to initialize NumPy: _ARRAY_API not found (Triggered internally at ../torch/csrc/utils/tensor_numpy.cpp:77.)
+  conversion = torch.tensor([
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.cora.x
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.cora.tx
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.cora.allx
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.cora.y
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.cora.ty
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.cora.ally
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.cora.graph
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.cora.test.index
+Processing...
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 41, in <module>
+    main()
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 37, in main
+    run_exp1(cfg["experiments"]["exp1"])
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/evaluate.py", line 149, in run_exp1
+    data = load_dataset(ds_entry)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/preprocess.py", line 42, in load_dataset
+    ds = Planetoid(root, name, transform=NormalizeFeatures())
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch_geometric/datasets/planetoid.py", line 92, in __init__
+    super().__init__(root, transform, pre_transform)
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch_geometric/data/in_memory_dataset.py", line 57, in __init__
+    super().__init__(root, transform, pre_transform, pre_filter, log)
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch_geometric/data/dataset.py", line 97, in __init__
+    self._process()
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch_geometric/data/dataset.py", line 230, in _process
+    self.process()
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch_geometric/datasets/planetoid.py", line 150, in process
+    data = read_planetoid_data(self.raw_dir, self.name)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch_geometric/io/planetoid.py", line 21, in read_planetoid_data
+    items = [read_file(folder, prefix, name) for name in names]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch_geometric/io/planetoid.py", line 21, in <listcomp>
+    items = [read_file(folder, prefix, name) for name in names]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch_geometric/io/planetoid.py", line 106, in read_file
+    out = torch.from_numpy(out).to(torch.float)
+          ^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Numpy is not available
