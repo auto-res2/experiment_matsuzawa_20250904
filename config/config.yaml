@@ -4,7 +4,7 @@ common:
   data_root: data/
   # Every figure the experiments generate **must** end up in this folder as
   # required by the grading rubric.
-  output_root: .research/iteration5/images
+  output_root: .research/iteration6/images
   # Reproducibility
   seeds: [0]
   # Optimiser hyper-parameters (simple and fast)
