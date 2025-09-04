@@ -1,1 +1,8 @@
-# Please list the required python packages.
+torch>=1.13.0,<2.0.0
+torchvision>=0.14.0,<0.16.0
+numpy>=1.21.0
+matplotlib>=3.5.0
+nanopq==0.2.2
+fvcore==0.1.5.post20221221
+torchattacks==3.5.1
+pyyaml>=6.0

@@ -1,0 +1,41 @@
+global:
+  mixed_precision: true
+  batch_size: 128
+  optim:
+    name: sgd
+    lr: 0.05
+    momentum: 0.9
+    weight_decay: 0.0005
+  clip_grad: 5.0
+  pq:
+    M: 8
+    Ks_list: [16, 32, 64, 128]
+  seeds: [1, 2, 3]
+
+datasets:
+  cifar100:
+    url: https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz
+    img_size: 32
+    split: [20, 5]
+  miniimagenet:
+    url: https://github.com/yaoyao-liu/mini-imagenet-tools
+    img_size: 84
+    split: [20, 5]
+  cub200:
+    url: https://data.caltech.edu/records/2865216/files/CUB_200_2011.tgz
+    img_size: 224
+    split: [20, 10]
+
+experiments:
+  exp1:
+    name: Memory-Accuracy Frontier
+    datasets: [cifar100, miniimagenet]
+    budgets_kb: [0.5, 1, 2, 5, 10]
+  exp2:
+    name: High-res & Long-Stream
+    datasets: [cub200]
+    budgets_kb: [10]
+  exp3:
+    name: Privacy & Robustness
+    datasets: [cifar100]
+    budgets_kb: [1]
