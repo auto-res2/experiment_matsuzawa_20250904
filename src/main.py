@@ -2,9 +2,31 @@
 Main orchestrator.  Run `python -m src.main`.
 """
 from __future__ import annotations
-import sys, json
+from pathlib import Path
+import sys, json, subprocess, sys as _sys
 import torch
 
+# -----------------------------------------------------------------------------
+# Ensure PyG (torch_geometric) & torch_scatter are present BEFORE importing
+# training/evaluation modules that depend on them.
+# -----------------------------------------------------------------------------
+try:
+    import torch_geometric  # noqa: F401 – just a presence check
+except ImportError:  # pragma: no cover – install only when missing
+    ver_base   = torch.__version__.split("+")[0]
+    backend    = torch.__version__.split("+")[1] if "+" in torch.__version__ else "cpu"
+    pyg_wheels = f"https://data.pyg.org/whl/torch-{ver_base}+{backend}.html"
+    cmd = [
+        _sys.executable, "-m", "pip", "install", "--quiet", "--no-cache-dir",
+        "torch_scatter==2.1.2", "torch_geometric==2.6.1", "-f", pyg_wheels
+    ]
+    subprocess.check_call(cmd)
+    import importlib; importlib.invalidate_caches()  # noqa: E702, F401
+    import torch_geometric  # noqa: F401 – re-import to confirm availability
+
+# -----------------------------------------------------------------------------
+# Now that dependencies are resolved we can safely import internals.
+# -----------------------------------------------------------------------------
 from .train import MODELS, train_model, cfg
 from .preprocess import load_dataset
 from .evaluate import (
@@ -23,6 +45,10 @@ DATASETS   = ["Path-of-Cliques", "Ring-of-Cliques", "Mixture"]
 DEPTH_GRID = cfg('exp1', 'depth_grid', default=[4,8,16])
 SEEDS      = [0] if cfg('fast', default=False) else list(range(10))
 
+# Ensure the mandatory image directory exists
+IMG_DIR = Path(".research/iteration25/images")
+IMG_DIR.mkdir(parents=True, exist_ok=True)
+
 success, total = 0, 0
 
 for depth in DEPTH_GRID:
@@ -34,9 +60,14 @@ for depth in DEPTH_GRID:
 
             # ---- build model ----
             Model = MODELS['CurvAMP']
-            model = Model(data.num_features, cfg('hidden', default=128),
-                          int(data.y.max().item())+1, depth,
-                          K=3, rewired_ratio=len(data.edge_index[0])//50/len(data.edge_index[0]))
+            model = Model(
+                data.num_features,
+                cfg('hidden', default=128),
+                int(data.y.max().item())+1,
+                depth,
+                K=3,
+                rewired_ratio=len(data.edge_index[0])//50/len(data.edge_index[0])
+            )
 
             # ---- train ----
             out = train_model(model, data, seed=seed)
@@ -63,8 +94,8 @@ for depth in DEPTH_GRID:
             }, indent=2))
 
             # ---- plots ----
-            plot_curve(val_curve, f"Val-loss {ds_name} depth={depth}",
-                       "CE loss", f"valloss_{ds_name}_d{depth}.pdf")
+            plot_path = IMG_DIR / f"valloss_{ds_name}_d{depth}.pdf"
+            plot_curve(val_curve, f"Val-loss {ds_name} depth={depth}", "CE loss", str(plot_path))
 
             if ds_name == "Mixture" and acc >= 0.90:
                 success += 1
