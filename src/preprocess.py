@@ -74,6 +74,7 @@ COMMON = CommonCfg()
 # ---------------------------------------------------------------------------
 
 def ensure_image_dir() -> Path:
-    img_dir = Path(".research/iteration1/images")
+    """Creates (if necessary) and returns the image directory for experiments."""
+    img_dir = Path(".research/iteration2/images")
     img_dir.mkdir(parents=True, exist_ok=True)
     return img_dir

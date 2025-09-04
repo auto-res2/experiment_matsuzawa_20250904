@@ -54,6 +54,8 @@ def save_lineplot(
     plt.ylabel(ylabel)
     plt.legend()
     plt.tight_layout()
+    # ensure directory exists before saving (defensive)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(out_path, bbox_inches="tight")
     plt.close()
 
@@ -188,8 +190,8 @@ def run_exp1(exp_cfg: Dict[str, dict]) -> None:  # noqa: C901  (complexity fine 
 
             # write figure for this (dataset, backbone)
             fig_name = f"accuracy_depth_{ds_name}_{backbone}.pdf"
-            ensure_image_dir()  # creates .research/iteration1/images
-            fig_path = Path(".research/iteration1/images") / fig_name
+            img_dir = ensure_image_dir()  # creates .research/iteration2/images
+            fig_path = img_dir / fig_name
             save_lineplot(
                 x_depth,
                 y_dict,

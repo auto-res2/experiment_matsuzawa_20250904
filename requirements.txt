@@ -1,6 +1,8 @@
 torch>=1.13.0,<2.0.0
-torch_geometric>=2.2.0,<3.0.0
-torchdata>=0.5.0,<0.8.0
+# torchdata is optional for this project and introduces dependency conflicts with
+# newer versions that require torch>=2.0.  We omit it to ensure smooth
+# resolution on GPUs with pre-installed CUDA runtime.  Add again if needed.
+torch_geometric>=2.2.0,<2.4.0
 pyyaml>=6.0
 numpy>=1.23
 matplotlib>=3.6
