@@ -1,8 +1,14 @@
+from __future__ import annotations
+
 """src/evaluate.py
 Evaluation, metrics, plotting utilities and diagnostic routines.
 Refactored verbatim from the original single-file script.
+The former circular import with src.train has been resolved by
+removing the top-level dependency on that module.  Only the symbols that
+are genuinely required at runtime (ContextSwapper) are imported lazily
+inside the diagnostic routine.  DEVICE / DTYPE are now defined locally
+so that this file is fully self-contained.
 """
-from __future__ import annotations
 
 import json
 from pathlib import Path
@@ -15,14 +21,18 @@ from rich import print
 from scipy.stats import ttest_rel
 from timm import create_model
 
-from .train import ContextSwapper, DTYPE, DEVICE
+# ------------------------------------------------------------------
+#  Hardware helpers – keep identical logic as in train.py but local
+# ------------------------------------------------------------------
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DTYPE = torch.bfloat16 if torch.cuda.is_available() else torch.float32
 
 # ------------------------------------------------------------------
-#  Paths
+#  Paths – images are required to live under .research/iteration15/images
 # ------------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS_DIR = ROOT / "results"
-FIG_DIR = ROOT / "figures"
+FIG_DIR = ROOT / ".research" / "iteration15" / "images"
 CKPT_DIR = ROOT / "models"
 for d in (RESULTS_DIR, FIG_DIR):
     d.mkdir(parents=True, exist_ok=True)
@@ -114,6 +124,10 @@ def save_bar(series: pd.Series, fname: str, ylabel: str, multiply: float = 1.0) 
 
 def run_diagnostics() -> None:  # noqa: D401
     """Post-training invariance sanity checks – seed0 checkpoints only."""
+
+    # The ContextSwapper symbol is imported lazily to avoid circular import
+    from .train import ContextSwapper  # pylint: disable=import-inside-function
+
     print("\n[bold cyan]Running invariance diagnostics …[/]")
     ckpt_erm = CKPT_DIR / "wb_erm.pt"
     ckpt_auto = CKPT_DIR / "wb_autospuswap.pt"
@@ -127,7 +141,7 @@ def run_diagnostics() -> None:  # noqa: D401
     auto.load_state_dict(torch.load(ckpt_auto, map_location=DEVICE))
     erm, auto = erm.to(DEVICE, dtype=DTYPE), auto.to(DEVICE, dtype=DTYPE)
 
-    # minimal loader –  no extra download  ------------------------------------
+    # minimal loader – no extra download  ------------------------------------
     from wilds import get_dataset  # local import avoids hard dependency at module load
     from wilds.common.data_loaders import get_eval_loader
     import torchvision.transforms as T
@@ -143,8 +157,7 @@ def run_diagnostics() -> None:  # noqa: D401
     with torch.no_grad():
         for batch in val_loader:
             x = batch["images"].to(DEVICE, dtype=DTYPE)
-            y = batch["y"].to(DEVICE)
-            x_cf, _ = swapper(x, y)
+            x_cf, _ = swapper(x, batch["y"])
             logits_e = erm(x)
             logits_a = auto(x)
             logits_e_cf = erm(x_cf)
