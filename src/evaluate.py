@@ -106,13 +106,13 @@ def evaluate(model, data):  # noqa: D401
 # -----------------------------------------------------------------------------
 
 def plot_curve(values: List[float], title: str, ylabel: str, out_path: Path | str):
-    """Save a simple line plot to *./research/iteration3/images*.
+    """Save a simple line plot to *./research/iteration4/images*.
 
     The ``out_path`` argument coming from caller code is ignored **except** for
     its file name – the destination directory is mandated by the task
     description.
     """
-    img_dir = Path(".research/iteration3/images")
+    img_dir = Path(".research/iteration4/images")
     img_dir.mkdir(parents=True, exist_ok=True)
 
     out_path = Path(out_path)

@@ -59,6 +59,7 @@ def _poc_graph() -> Data:
 
 
 def _roc_graph() -> Data:
+    """Ring-of-Cliques (cycle of 30 clique attachments)."""
     fname = DATA_DIR / "synthetic/roc.npz"
     if fname.exists():
         arr = np.load(fname)
@@ -67,18 +68,29 @@ def _roc_graph() -> Data:
             edge_index=torch.tensor(arr["edge_index"], dtype=torch.long),
             y=torch.tensor(arr["y"], dtype=torch.long),
         )
+
+    # Start with a 30-node cycle to serve as the backbone.
     g = nx.cycle_graph(30)
     label = []
     vid_off = 0
-    for c, clique_center in enumerate(g.nodes()):
+
+    # IMPORTANT: Iterate over a *fixed* list of backbone nodes to avoid the
+    # "dictionary changed size during iteration" RuntimeError that occurs when
+    # we later add new nodes while looping.
+    backbone_nodes = list(range(30))
+
+    for c, clique_center in enumerate(backbone_nodes):
         clique_nodes = list(range(vid_off, vid_off + 10))
+        # Fully connect the clique.
         for i in clique_nodes:
             for j in clique_nodes:
                 if i < j:
                     g.add_edge(i, j)
+        # Attach the clique to its backbone node.
         g.add_edge(clique_center, vid_off)
         label += [c] * 10
         vid_off += 10
+
     edge_index = torch.tensor(list(g.edges)).t().contiguous()
     edge_index = to_undirected(edge_index)
     x = torch.eye(10).repeat(30, 1) + 0.01 * torch.randn(300, 10)
@@ -114,6 +126,7 @@ def _mx_graph() -> Data:
 # -----------------------------------------------------------------------------
 #                           Public loader map
 # -----------------------------------------------------------------------------
+
 dataset_map: Dict[str, Callable[[], Data]] = {
     "path_of_cliques": _poc_graph,
     "ring_of_cliques": _roc_graph,
