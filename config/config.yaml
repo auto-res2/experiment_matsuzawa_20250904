@@ -1,0 +1,29 @@
+common:
+  seed_list: [11, 13, 17, 19, 23]
+  device: cuda
+  hidden: 64
+  dropout: 0.5
+  lr: 0.01
+  weight_decay: 0.0005
+  early_stop: 100
+
+experiments:
+  exp1:
+    description: "EXP-1  Depth-Scalability & Over-smoothing Stress Test"
+    datasets:
+      Cora: {class: Planetoid, name: Cora}
+      PubMed: {class: Planetoid, name: PubMed}
+      Chameleon: {class: WikipediaNetwork, name: chameleon}
+      Texas: {class: WebKB, name: Texas}
+    depth_grid: [2, 8, 32, 64, 128, 256]
+    backbones: [gcn, sage]
+    remedies: [vanilla, pairnorm, ndls, contranorm, fans]
+    epochs:
+      Cora: 600
+      PubMed: 400
+      Chameleon: 800
+      Texas: 1000
+  exp2:
+    description: "EXP-2  Frequency-Selectivity Probe on Synthetic Graph"
+  exp3:
+    description: "EXP-3  Robustness to Structural & Feature Noise on Squirrel"
