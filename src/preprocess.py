@@ -1,3 +1,4 @@
+
 """
 src/preprocess.py – dataset loading & synthetic generators
 """
@@ -10,8 +11,13 @@ from typing import Tuple
 import networkx as nx
 import torch
 from torch_geometric.data import Data
-from torch_geometric.datasets import LRGB, Planetoid, WebKB
+from torch_geometric.datasets import Planetoid, WebKB
 from torch_geometric.utils import from_networkx
+
+# NOTE: LRGBDataset is imported lazily inside `load_dataset` to avoid unnecessary
+# hard dependency when it is not required by the chosen datasets. This prevents
+# ImportErrors in environments where the class name may differ across
+# torch-geometric versions.
 
 # -----------------------------------------------------------------------------
 # Synthetic clique-based graphs (Path-of-Cliques, Ring-of-Cliques, Mixture)
@@ -60,17 +66,29 @@ def _get_synthetic(name: str) -> Data:
 def load_dataset(name: str, split_seed: int = 0):
     if name in {"Path-of-Cliques", "Ring-of-Cliques", "Mixture"}:
         data = _get_synthetic(name)
+
     elif name in {"Cora", "CiteSeer", "PubMed"}:
         data = Planetoid(root="data/" + name, name=name)[0]
+
     elif name in {"Texas", "Cornell", "Wisconsin"}:
         data = WebKB(root="data/" + name, name=name)[0]
+
     elif name in {"Peptides-func", "Peptides-struct", "PCQM-Contact"}:
-        key = name.replace("-", "")  # LRGB naming quirk
-        data = LRGB(root="data/LRGB", name=key)[0]
+        # Lazily import to avoid breaking when the class name changes.
+        try:
+            from torch_geometric.datasets import LRGBDataset as _LRGBDataset  # type: ignore
+        except ImportError as e:
+            raise ImportError(
+                "torch_geometric >=2.2 with LRGBDataset is required for the LRGB benchmarks"
+            ) from e
+
+        key = name.replace("-", "")  # LRGB naming quirk (e.g. Peptides-func → Peptidesfunc)
+        data = _LRGBDataset(root="data/LRGB", name=key)[0]
+
     else:
         raise KeyError(f"Unknown dataset {name}")
 
-    # Split masks -----------------------------------------------------------
+    # -------------------------- train/val/test split -------------------------
     torch.manual_seed(split_seed)
     if getattr(data, "train_mask", None) is None:
         n = data.num_nodes
