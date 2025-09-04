@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 97, in <module>
+    main()
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 87, in main
+    results = eval_full(model, data, f"{dataset_name}_{model_name}_seed{seed}")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/evaluate.py", line 98, in eval_full
+    er_curve = [eff_rank(f) for f in feats]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/evaluate.py", line 98, in <listcomp>
+    er_curve = [eff_rank(f) for f in feats]
+                ^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/evaluate.py", line 32, in eff_rank
+    return math.exp(h).item() / z.size(1)
+           ^^^^^^^^^^^^^^^^
+AttributeError: 'float' object has no attribute 'item'
