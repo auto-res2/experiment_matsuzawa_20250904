@@ -1,0 +1,5 @@
+=== pip install start Thu Sep  4 10:04:36 UTC 2025 ===
+Collecting git+https://github.com/openai/CLIP.git@83a5 (from -r requirements.txt (line 6))
+  Cloning https://github.com/openai/CLIP.git (to revision 83a5) to /tmp/pip-req-build-b893xgu6
+  Did not find branch or tag '83a5', assuming revision or ref.
+=== experiment start Thu Sep  4 10:04:40 UTC 2025 ===
