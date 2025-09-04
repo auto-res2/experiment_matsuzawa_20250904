@@ -1,0 +1,40 @@
+  0%|          | 0.00/169M [00:00<?, ?B/s]  1%|          | 893k/169M [00:00<00:19, 8.74MB/s]  6%|▋         | 10.8M/169M [00:00<00:02, 61.7MB/s] 13%|█▎        | 22.4M/169M [00:00<00:01, 86.0MB/s] 20%|█▉        | 33.8M/169M [00:00<00:01, 97.0MB/s] 27%|██▋       | 45.4M/169M [00:00<00:01, 104MB/s]  34%|███▎      | 57.0M/169M [00:00<00:01, 108MB/s] 41%|████      | 68.5M/169M [00:00<00:00, 110MB/s] 47%|████▋     | 80.3M/169M [00:00<00:00, 113MB/s] 54%|█████▍    | 91.7M/169M [00:00<00:00, 113MB/s] 61%|██████    | 103M/169M [00:01<00:00, 114MB/s]  68%|██████▊   | 115M/169M [00:01<00:00, 114MB/s] 75%|███████▍  | 126M/169M [00:01<00:00, 114MB/s] 81%|████████▏ | 138M/169M [00:01<00:00, 112MB/s] 88%|████████▊ | 149M/169M [00:01<00:00, 102MB/s] 94%|█████████▍| 159M/169M [00:01<00:00, 95.2MB/s]100%|█████████▉| 169M/169M [00:01<00:00, 90.1MB/s]100%|██████████| 169M/169M [00:01<00:00, 99.7MB/s]
+Downloading: "https://download.pytorch.org/models/resnet18-f37072fd.pth" to /home/runner/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth
+  0%|          | 0.00/44.7M [00:00<?, ?B/s] 59%|█████▉    | 26.2M/44.7M [00:00<00:00, 274MB/s]100%|██████████| 44.7M/44.7M [00:00<00:00, 285MB/s]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 120, in <module>
+    res_per_seed.append(run_single_experiment(cfg))
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py", line 332, in run_single_experiment
+    logits, code_idx, qloss = model(imgs)
+                              ^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py", line 124, in forward
+    _ = self.dec(z_q)  # decoder branch – not used at inference time
+        ^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/nn/modules/container.py", line 217, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1532, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1541, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 952, in forward
+    return F.conv_transpose2d(
+           ^^^^^^^^^^^^^^^^^^^
+RuntimeError: Given transposed=1, weight of size [64, 128, 3, 3], expected input[128, 128, 4, 4] to have 64 channels, but got 128 channels instead
