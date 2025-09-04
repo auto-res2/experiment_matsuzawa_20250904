@@ -237,11 +237,26 @@ MODELS: Dict[str, nn.Module] = {
 # Optimisation utilities
 # -----------------------------------------------------------------------------
 
+def _clear_cached_adj(model: nn.Module) -> None:
+    """Clear cached adjacency matrices inside GCNConv layers (if any)."""
+
+    for module in model.modules():
+        if isinstance(module, GCNConv):
+            # PyG uses these private attributes for caching. They may not all be
+            # present depending on the version, so we guard with hasattr.
+            for attr in ("_cached_edge_index", "_cached_adj_t", "_cached_x"):
+                if hasattr(module, attr):
+                    setattr(module, attr, None)
+
+
 def train_one(model: nn.Module, data, cfg: dict, device: torch.device):
     """Train *model* on *data* following hyper-parameters in *cfg*."""
 
+    # Move tensors to the desired device *before* any forward pass so that
+    # cached items (e.g. in GCNConv) are stored on the correct device.
     model.to(device)
     data = data.to(device)
+
     opt = torch.optim.AdamW(model.parameters(), lr=cfg["lr"], weight_decay=cfg["wd"])
     best_val, best_state = -1.0, None
     val_curve: List[float] = []
@@ -278,7 +293,13 @@ def train_one(model: nn.Module, data, cfg: dict, device: torch.device):
 
 
 def gradient_check(model: nn.Module, data):
-    """Fail-fast tensor gradient sanity check (no silent collapse)."""
+    """Fail-fast tensor gradient sanity check (no silent collapse).
+
+    This routine purposefully runs on CPU to be lightweight, *but* we must make
+    sure we do not leave behind device-specific caches (e.g. inside GCNConv).
+    Therefore we explicitly clear any such cached objects before returning so
+    that subsequent training on GPU recomputes them on the correct device.
+    """
 
     logits, _ = model(data)
     loss = F.cross_entropy(logits[data.train_mask], data.y[data.train_mask])
@@ -286,3 +307,7 @@ def gradient_check(model: nn.Module, data):
     total_grad = sum(p.grad.abs().sum().item() for p in model.parameters() if p.grad is not None)
     if total_grad < 1e-6:
         raise RuntimeError("❌ Gradients vanished (|grad|<1e-6) – aborting as per policy")
+
+    # Remove potentially stale CPU-cached adjacency matrices so that later GPU
+    # training does not run into cross-device errors.
+    _clear_cached_adj(model)
