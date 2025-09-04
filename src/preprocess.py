@@ -24,8 +24,8 @@ from torchvision.datasets import CIFAR100
 #  Global paths (created on import)
 # ---------------------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent.parent
-# All figures must be stored under .research/iteration4/images as per spec.
-FIG_ROOT = ROOT / ".research" / "iteration4" / "images"
+# All figures must be stored under .research/iteration5/images as per spec.
+FIG_ROOT = ROOT / ".research" / "iteration5" / "images"
 DATA_ROOT = ROOT / "data"
 CKPT_ROOT = ROOT / "checkpoints"
 
