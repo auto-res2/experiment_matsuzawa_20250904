@@ -1,0 +1,18 @@
+0Byte [00:00, ?Byte/s]0Byte [00:01, ?Byte/s]802816Byte [00:01, 7078004.27Byte/s]10272768Byte [00:01, 46671124.42Byte/s]24723456Byte [00:01, 85729132.60Byte/s]34635776Byte [00:01, 90590788.44Byte/s]47308800Byte [00:02, 100922789.45Byte/s]57024512Byte [00:02, 80742700.01Byte/s] 67108864Byte [00:02, 66473752.27Byte/s]80920576Byte [00:02, 83007047.80Byte/s]90218496Byte [00:02, 67865100.29Byte/s]100655104Byte [00:02, 62639334.61Byte/s]114147328Byte [00:02, 77477441.77Byte/s]123158528Byte [00:03, 62354406.54Byte/s]134201344Byte [00:03, 71854773.34Byte/s]142729216Byte [00:03, 65381384.61Byte/s]150986752Byte [00:03, 57986735.12Byte/s]163078144Byte [00:03, 70972490.94Byte/s]171302912Byte [00:03, 64279004.67Byte/s]182788096Byte [00:04, 75121396.87Byte/s]191250432Byte [00:04, 64560309.28Byte/s]201318400Byte [00:04, 59574555.24Byte/s]214196224Byte [00:04, 73870921.23Byte/s]222707712Byte [00:04, 63165755.87Byte/s]234872832Byte [00:04, 64128095.91Byte/s]248274944Byte [00:05, 78415233.17Byte/s]257253376Byte [00:05, 69968341.37Byte/s]268419072Byte [00:05, 78456281.69Byte/s]277168128Byte [00:05, 65725034.64Byte/s]285204480Byte [00:05, 58537944.97Byte/s]298704896Byte [00:05, 74411080.22Byte/s]307339264Byte [00:05, 65533830.26Byte/s]318767104Byte [00:06, 63160505.35Byte/s]332521472Byte [00:06, 77640027.25Byte/s]341377024Byte [00:06, 65523603.13Byte/s]351698944Byte [00:06, 73289962.99Byte/s]360054784Byte [00:06, 54200754.01Byte/s]369098752Byte [00:06, 51943070.93Byte/s]382091264Byte [00:07, 66555659.46Byte/s]390291456Byte [00:07, 53990443.32Byte/s]402653184Byte [00:07, 57225933.72Byte/s]416555008Byte [00:07, 72511248.79Byte/s]425394176Byte [00:07, 65793026.01Byte/s]436199424Byte [00:07, 62859361.45Byte/s]450019328Byte [00:08, 77901925.67Byte/s]459145216Byte [00:08, 54014912.71Byte/s]469737472Byte [00:08, 63057122.82Byte/s]477970432Byte [00:08, 60006412.22Byte/s]489291776Byte [00:08, 55807891.89Byte/s]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 36, in <module>
+    main()
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 29, in main
+    run_waterbirds()
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py", line 144, in run_waterbirds
+    loaders, dataset = get_waterbirds_loaders(CONFIG["training"]["batch_size"], seed)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/preprocess.py", line 73, in get_waterbirds_loaders
+    "train": get_train_loader(
+             ^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/wilds/common/data_loaders.py", line 30, in get_train_loader
+    return DataLoader(
+           ^^^^^^^^^^^
+TypeError: torch.utils.data.dataloader.DataLoader() got multiple values for keyword argument 'shuffle'
