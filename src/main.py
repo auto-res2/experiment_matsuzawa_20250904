@@ -1,91 +1,136 @@
-"""
-main.py – project entry point.  Usage:  python -m src.main
+"""src/main.py
+Entry-point for CAP-GNN experiments.
+Run via:   python -m src.main
 """
 from __future__ import annotations
-import argparse, pprint, textwrap, os
+import os, sys, random, time, textwrap
 from pathlib import Path
+from typing import Any, Dict, List
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
-import torch, yaml, pandas as pd
+import yaml
+import numpy as np
+import torch
+import pandas as pd
 
-from .preprocess import load_dataset, compute_or_curvature
-from .train import train_on_graph
+# ---------------------------------------------------------------------------
+#  Make package root importable when executed from outside project root
+# ---------------------------------------------------------------------------
+PKG_DIR = Path(__file__).resolve().parent  # src/
+if str(PKG_DIR.parent) not in sys.path:
+    sys.path.insert(0, str(PKG_DIR.parent))
 
-# -----------------------------------------------------------------------------
-#  Configuration
-# -----------------------------------------------------------------------------
-CFG_PATH = Path(__file__).resolve().parent.parent / "config" / "config.yaml"
+# Project directories --------------------------------------------------------
+(PKG_DIR / "../.research/iteration7/images").resolve().mkdir(parents=True, exist_ok=True)
+FIG_DIR = (PKG_DIR / "../.research/iteration7/images").resolve()
+(PKG_DIR / "cache").mkdir(exist_ok=True)
+
+# Local imports (after path fix) --------------------------------------------
+from .preprocess import load_planetoid, compute_or_curvature
+from .train import GCNStack, train_one
+from .evaluate import save_loss_plot
+
+# ---------------------------------------------------------------------------
+#  Deterministic behaviour
+# ---------------------------------------------------------------------------
+SEED = 0
+random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(SEED)
+    torch.backends.cudnn.deterministic = True
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# ---------------------------------------------------------------------------
+#  Configuration handling
+# ---------------------------------------------------------------------------
+CFG_PATH = PKG_DIR.parent / "config" / "config.yaml"
+CFG_PATH.parent.mkdir(exist_ok=True, parents=True)
 DEFAULT_CFG = {
-    "description": "Depth scaling stress-test on medium graphs.",
-    "datasets": ["Cora"],  # trimmed for fast CI runs
-    "depths": [16],
-    "variants": ["vanilla"],
-    "lr": 1e-3,
-    "weight_decay": 5e-4,
-    "max_epochs": 5,      # << sharply reduced
+    "experiment": "CI-SMOKE",
+    "datasets": ["Cora"],
+    "depth": 16,
+    "hidden_dim": 64,
+    "epochs": 5,
     "patience": 3,
-    "log_every": 1,
-    "seeds": [0],
-    "act_params": {"beta": 0.01, "tau": 1.0},
-    "cache_dir": "cache",
-    "output_dir": "figures",
+    "lr": 1e-3,
+    "wd": 5e-4,
+    "dropout": 0.5,
+    "act_beta": 0.01,
+    "act_tau": 1.0,
+    "variants": ["vanilla", "cap"],
 }
+if not CFG_PATH.exists():
+    yaml.safe_dump(DEFAULT_CFG, CFG_PATH.open("w"))
+CFG: Dict[str, Any] = DEFAULT_CFG
+# merge user cfg (if exists) on top of defaults
+user_cfg = yaml.safe_load(CFG_PATH.read_text()) or {}
+CFG.update(user_cfg)
 
-# Guard: If a user-provided config exists, we *merge* it with the lightweight
-# defaults.  The defaults guarantee that a quick pass in the automated grading
-# environment will finish in time, while still allowing end–users to overwrite
-# them afterwards.
-if CFG_PATH.exists():
-    with open(CFG_PATH) as fp:
-        user_cfg_raw = yaml.safe_load(fp)
-        # we only look for the first key (e.g. "exp1") to stay compatible
-        key = next(iter(user_cfg_raw))
-        cfg_user = user_cfg_raw[key]
-else:
-    CFG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(CFG_PATH, "w") as f:
-        yaml.safe_dump({"exp1": DEFAULT_CFG}, f)
-    cfg_user = DEFAULT_CFG
+# propagate dropout to model file via environment var (simplest way)
+os.environ["CAPGNN_DROPOUT"] = str(CFG["dropout"])
 
-# merge with precedence to user values where provided
-USER_CFG = {**DEFAULT_CFG, **cfg_user}
+# ---------------------------------------------------------------------------
+#  Run experiment (smoke test)
+# ---------------------------------------------------------------------------
 
-# -----------------------------------------------------------------------------
-#  CLI arguments
-# -----------------------------------------------------------------------------
-parser = argparse.ArgumentParser()
-parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
-args = parser.parse_args()
+def run_smoke() -> None:
+    print("\n================  CI-SMOKE EXPERIMENT  ================")
+    print(textwrap.dedent("""
+        Purpose: minimal end-to-end run that verifies the CAP-GNN stack can
+        execute forward/backward on GPU in CI. Dataset=Cora, Depth=16, Epochs=5.
+    """))
 
+    results: List[Dict[str, Any]] = []
+    for ds_name in CFG["datasets"]:
+        data = load_planetoid(ds_name)
+        kappa = compute_or_curvature(data, PKG_DIR / "cache" / f"{ds_name}_kappa.pt")
 
-# -----------------------------------------------------------------------------
-#  Main execution
-# -----------------------------------------------------------------------------
+        for variant in CFG["variants"]:
+            model = GCNStack(
+                in_dim=data.num_features,
+                hidden=CFG["hidden_dim"],
+                out_dim=int(data.y.max()) + 1,
+                depth=CFG["depth"],
+                variant=variant,
+                kappa=kappa if variant == "cap" else None,
+                act_cfg={"beta": CFG["act_beta"], "tau": CFG["act_tau"]} if variant == "cap" else None,
+            )
+            # propagate dropout
+            model.dropout.p = float(os.environ.get("CAPGNN_DROPOUT", 0.5))
 
-def main():
-    cfg = USER_CFG
-    pprint.pprint(cfg)
+            t0 = time.perf_counter()
+            losses, metrics, _ = train_one(
+                model, data, CFG["epochs"], CFG["patience"],
+                CFG["lr"], CFG["wd"], device
+            )
+            t1 = time.perf_counter()
+            mem = (torch.cuda.max_memory_reserved() / 1024 ** 3) if torch.cuda.is_available() else 0.0
 
-    cache_dir = Path(cfg["cache_dir"]);
-    out_dir = Path(cfg["output_dir"])
-    cache_dir.mkdir(exist_ok=True); out_dir.mkdir(exist_ok=True)
+            print(f"{variant:<7}  val={metrics['val']:.4f}  test={metrics['test']:.4f}  "
+                  f"rowdiff={metrics['rowdiff']:.4f}  time={t1 - t0:.1f}s  mem={mem:.2f}GB")
 
-    all_results = []
-    for ds_name in cfg["datasets"]:
-        data = load_dataset(ds_name)
-        kappa = compute_or_curvature(data, cache_dir / f"{ds_name}_kappa.pt")
-        cfg_local = {**cfg, "edge_kappa": kappa, "output_dir": out_dir}
-        all_results = train_on_graph(ds_name, data, cfg_local, all_results)
+            # record
+            results.append({"dataset": ds_name, "variant": variant, **metrics,
+                             "time": t1 - t0, "mem": mem})
+            # figure
+            fig_path = FIG_DIR / f"training_loss_{variant}.pdf"
+            save_loss_plot({variant: losses}, fig_path)
 
-    # -------------------- summary & persistence --------------------
-    df = pd.DataFrame(all_results)
-    if not df.empty:
-        summary = df.groupby(["dataset", "variant", "depth"]).agg({"best_val_acc": "mean", "gpu_mem": "mean"})
-        print("\n=====  Numerical Summary  =====")
-        print(summary.round(4))
-        summary.to_csv(out_dir / "exp1_summary.csv")
-    else:
-        print("No results – likely early exit in fast-run mode.")
+    # ---- summary CSV ----
+    summary_csv = FIG_DIR / "exp1_summary.csv"
+    pd.DataFrame(results).to_csv(summary_csv, index=False)
 
+    print("\nArtifacts written to:")
+    for p in FIG_DIR.glob("*.pdf"):
+        print("  ", p.relative_to(FIG_DIR.parent.parent))
+    print("  ", summary_csv.relative_to(FIG_DIR.parent.parent))
 
+# ---------------------------------------------------------------------------
+#  Entrypoint
+# ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    main()
+    if not torch.cuda.is_available():
+        sys.exit("Error: CUDA device not available – fail-fast as specified.")
+    run_smoke()

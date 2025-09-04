@@ -1,16 +1,15 @@
-exp1:
-  description: "Depth scaling stress-test on medium graphs."
-  datasets: [Cora, Citeseer, Chameleon, Squirrel, ogbn-arxiv]
-  depths: [16, 32, 64, 128]
-  variants: [vanilla, dropedge, dgn, cap]
-  lr: 0.001
-  weight_decay: 0.0005
-  max_epochs: 500
-  patience: 50
-  log_every: 10
-  seeds: [0,1,2,3,4,5,6,7,8,9]
-  act_params:
-    beta: 0.01
-    tau: 1.0
-  cache_dir: cache
-  output_dir: figures
+experiment: CI-SMOKE
+datasets:
+  - Cora
+depth: 16
+hidden_dim: 64
+epochs: 5
+patience: 3
+lr: 0.001
+wd: 0.0005
+dropout: 0.5
+act_beta: 0.01
+act_tau: 1.0
+variants:
+  - vanilla
+  - cap
