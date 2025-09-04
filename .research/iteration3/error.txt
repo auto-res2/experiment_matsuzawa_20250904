@@ -1,0 +1,28 @@
+DGL backend not selected or invalid.  Assuming PyTorch for now.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 23, in <module>
+    from .train import AdaPropGCN, train_epoch
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py", line 87, in <module>
+    import dgl  # noqa: E402
+    ^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/__init__.py", line 16, in <module>
+    from . import (
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/dataloading/__init__.py", line 13, in <module>
+    from .dataloader import *
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/dataloading/dataloader.py", line 27, in <module>
+    from ..distributed import DistGraph
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/distributed/__init__.py", line 5, in <module>
+    from .dist_graph import DistGraph, DistGraphServer, edge_split, node_split
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/distributed/dist_graph.py", line 11, in <module>
+    from .. import backend as F, graphbolt as gb, heterograph_index
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/graphbolt/__init__.py", line 10, in <module>
+    from .dataloader import *
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/graphbolt/dataloader.py", line 11, in <module>
+    from .feature_fetcher import FeatureFetcher
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/graphbolt/feature_fetcher.py", line 11, in <module>
+    from .minibatch_transformer import MiniBatchTransformer
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/graphbolt/minibatch_transformer.py", line 5, in <module>
+    from torchdata.datapipes.iter import Mapper
+ImportError: cannot import name 'Mapper' from 'torchdata.datapipes.iter' (unknown location)
