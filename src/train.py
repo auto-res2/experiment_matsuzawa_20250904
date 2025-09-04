@@ -18,6 +18,12 @@ from .evaluate import (
     save_lineplot,
 )
 
+# ----------------------------------------------------------------------------
+#  Constants – all experiment figures MUST live in this folder (see task prompt)
+# ----------------------------------------------------------------------------
+IMAGE_DIR = Path(".research/iteration4/images")
+IMAGE_DIR.mkdir(parents=True, exist_ok=True)
+
 # ----------------------------------------------------------------------------------
 #  Model building blocks
 # ----------------------------------------------------------------------------------
@@ -135,13 +141,30 @@ class DeepBackbone(nn.Module):
                     )
                     self.layers.append(GINConv(nn1))
             elif variant == "dropedge":
-                self.layers.append(
-                    nn.Sequential(DropEdge(p=0.5), GCNConv(hidden_dim, hidden_dim, add_self_loops=False))
-                )
+                # We wrap the two-step procedure (edge-drop followed by GCN) into
+                # a small callable to keep the forward logic simple.
+                class _DropEdgeGCN(nn.Module):
+                    def __init__(self, p: float, hidden_dim: int):
+                        super().__init__()
+                        self.de = DropEdge(p=p)
+                        self.gcn = GCNConv(hidden_dim, hidden_dim, add_self_loops=False)
+
+                    def forward(self, x: torch.Tensor, edge_index: torch.Tensor):
+                        ei = self.de(edge_index)
+                        return self.gcn(x, ei)
+
+                self.layers.append(_DropEdgeGCN(p=0.5, hidden_dim=hidden_dim))
             elif variant == "dgn":
-                self.layers.append(
-                    nn.Sequential(GCNConv(hidden_dim, hidden_dim, add_self_loops=False), PairNorm(scale=1.0))
-                )
+                class _GCNPairNorm(nn.Module):
+                    def __init__(self, hidden_dim: int):
+                        super().__init__()
+                        self.gcn = GCNConv(hidden_dim, hidden_dim, add_self_loops=False)
+                        self.pn = PairNorm(scale=1.0)
+
+                    def forward(self, x: torch.Tensor, edge_index: torch.Tensor):
+                        return self.pn(self.gcn(x, edge_index))
+
+                self.layers.append(_GCNPairNorm(hidden_dim))
             elif variant == "cap":
                 self.layers.append(
                     CAPConv(
@@ -171,7 +194,7 @@ class DeepBackbone(nn.Module):
                 x, p_cost = layer(x, edge_index, halting)
                 ponder_loss += p_cost if p_cost is not None else 0.0
             else:
-                x = layer(x, edge_index) if not isinstance(layer, nn.Sequential) else layer(x, edge_index)
+                x = layer(x, edge_index)
             x = self.act(x)
             x = self.dropout(x)
         logits = self.output_lin(x)
@@ -196,8 +219,9 @@ def train_on_graph(dataset_name: str, data, cfg: dict, results: list) -> list:
     for depth in cfg["depths"]:
         for variant in cfg["variants"]:
             tag = f"{dataset_name}_{variant}_{depth}L"
-            out_dir = (Path(cfg["output_dir"]) / tag).expanduser()
-            out_dir.mkdir(parents=True, exist_ok=True)
+            # All figures saved under the mandatory IMAGE_DIR
+            fig_path = IMAGE_DIR / f"rowdiff_{tag}.pdf"
+            fig_path.parent.mkdir(parents=True, exist_ok=True)
 
             metrics_epoch = {"epoch": [], "val_acc": [], "row_diff": [], "iig": []}
 
@@ -257,7 +281,6 @@ def train_on_graph(dataset_name: str, data, cfg: dict, results: list) -> list:
                 )
 
             # ---- save learning curves (row-diff) ----
-            fig_path = out_dir / f"rowdiff_{tag}.pdf"
             save_lineplot(metrics_epoch["epoch"], metrics_epoch["row_diff"], "Epoch", "Row-Diff", tag, fig_path)
     return results
 

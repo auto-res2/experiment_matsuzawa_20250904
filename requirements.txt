@@ -1,6 +1,7 @@
 torch>=1.13.0,<2.0.0
 torch_geometric>=2.3.0
-torchdata==0.5.1
+# torchdata was pinned to a version that is not available for Python 3.11.
+# It is optional here, so we drop the hard requirement to prevent installation failure.
 fvcore>=0.1.5
 GraphRicciCurvature>=0.5.3
 networkx>=2.8
