@@ -6,5 +6,82 @@
     "domain generalization computer vision",
     "invariant risk minimization",
     "causal representation learning"
+  ],
+  "research_study_list": [
+    {
+      "title": "Understanding the failure modes of out-of-distribution generalization"
+    },
+    {
+      "title": "Hard ImageNet: Segmentations for Objects with Strong Spurious Cues"
+    },
+    {
+      "title": "MetaCoCo: A New Few-Shot Classification Benchmark with Spurious Correlation"
+    },
+    {
+      "title": "Accuracy on the Curve: On the Nonlinear Correlation of ML Performance Between Data Subpopulations"
+    },
+    {
+      "title": "Last Layer Re-Training is Sufficient for Robustness to Spurious Correlations"
+    },
+    {
+      "title": "Non-convex Distributionally Robust Optimization: Non-asymptotic Analysis"
+    },
+    {
+      "title": "Outlier-Robust Wasserstein DRO"
+    },
+    {
+      "title": "Fast Bellman Updates for Wasserstein Distributionally Robust MDPs"
+    },
+    {
+      "title": "Outlier-Robust Distributionally Robust Optimization via Unbalanced Optimal Transport"
+    },
+    {
+      "title": "Scalable Distributional Robustness in a Class of Non-Convex Optimization with Guarantees"
+    },
+    {
+      "title": "Domain Invariant Representation Learning with Domain Density Transformations"
+    },
+    {
+      "title": "Model-Based Domain Generalization"
+    },
+    {
+      "title": "In Search of Lost Domain Generalization"
+    },
+    {
+      "title": "Domain Generalization via Entropy Regularization"
+    },
+    {
+      "title": "A Bit More Bayesian: Domain-Invariant Learning with Uncertainty"
+    },
+    {
+      "title": "Invariant Risk Minimization Is A Total Variation Model"
+    },
+    {
+      "title": "The Missing Invariance Principle found --  the Reciprocal Twin of Invariant Risk Minimization "
+    },
+    {
+      "title": "Sparse Invariant Risk Minimization"
+    },
+    {
+      "title": "Sparse Invariant Risk Minimization"
+    },
+    {
+      "title": "The Risks of Invariant Risk Minimization"
+    },
+    {
+      "title": "Causal Representation Learning Made Identifiable by Grouping of Observational Variables"
+    },
+    {
+      "title": "Causal Representation Learning for Instantaneous and Temporal Effects in Interactive Systems"
+    },
+    {
+      "title": "A Sparsity Principle for Partially Observable Causal Representation Learning"
+    },
+    {
+      "title": "Identifiable Latent Polynomial Causal Models through the Lens of Change"
+    },
+    {
+      "title": "Causal Representation Learning from Multiple Distributions: A General Setting"
+    }
   ]
 }
