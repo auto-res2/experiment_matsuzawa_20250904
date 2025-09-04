@@ -1,6 +1,6 @@
 dataset:
   waterbirds:
-    version: 2.0
+    version: 1.0
     root_dir: data
 model:
   name: resnetv2_50x1_bit.goog_in21k_ft_in1k

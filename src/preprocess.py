@@ -31,11 +31,14 @@ def get_waterbirds_loaders(
 ) -> Tuple[Callable[[], Dict[str, any]], Dict[str, int]]:  # noqa: ANN401
     """Returns (loader_factory, meta) to avoid duplicate downloads."""
 
-    wb = get_dataset("waterbirds", version="2.0", root_dir=str(DATA_DIR), download=True)
+    # Waterbirds only has version 1.0 in the current WILDS release
+    wb = get_dataset("waterbirds", version="1.0", root_dir=str(DATA_DIR), download=True)
 
-    def make_loader(split: str, shuffle: bool):
-        return get_train_loader(
-            "standard" if split == "train" else "evaluation",
+    def make_loader(split: str):
+        loader_fn = get_train_loader if split == "train" else get_eval_loader
+        mode = "standard" if split == "train" else "standard"
+        return loader_fn(
+            mode,
             wb,
             split=split,
             batch_size=batch_size,
@@ -44,6 +47,6 @@ def get_waterbirds_loaders(
         )
 
     def loader_factory():  # new DataLoader objects each call
-        return {s: make_loader(s, s == "train") for s in ("train", "val")}
+        return {s: make_loader(s) for s in ("train", "val")}
 
     return loader_factory, {"n_groups": wb.n_groups}

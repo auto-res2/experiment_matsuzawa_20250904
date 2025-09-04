@@ -28,11 +28,11 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DTYPE = torch.bfloat16 if torch.cuda.is_available() else torch.float32
 
 # ------------------------------------------------------------------
-#  Paths – images are required to live under .research/iteration15/images
+#  Paths – images are required to live under .research/iteration16/images
 # ------------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS_DIR = ROOT / "results"
-FIG_DIR = ROOT / ".research" / "iteration15" / "images"
+FIG_DIR = ROOT / ".research" / "iteration16" / "images"  # updated path
 CKPT_DIR = ROOT / "models"
 for d in (RESULTS_DIR, FIG_DIR):
     d.mkdir(parents=True, exist_ok=True)
@@ -146,7 +146,8 @@ def run_diagnostics() -> None:  # noqa: D401
     from wilds.common.data_loaders import get_eval_loader
     import torchvision.transforms as T
 
-    wb = get_dataset("waterbirds", version="2.0", root_dir=str(ROOT / "data"), download=False)
+    # Waterbirds only supports version 1.0 in wilds – updated accordingly
+    wb = get_dataset("waterbirds", version="1.0", root_dir=str(ROOT / "data"), download=False)
     val_tf = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
     val_loader = get_eval_loader(
         "standard", wb, split="val", batch_size=64, num_workers=2, transform=val_tf
