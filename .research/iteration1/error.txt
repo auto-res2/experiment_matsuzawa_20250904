@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 25, in <module>
+    from .train import Trainer, AutoSpuWrapper
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py", line 57
+    "Full AutoSpuSwap pipeline not yet ported – set 'enabled:
+    ^
+SyntaxError: unterminated string literal (detected at line 57)
