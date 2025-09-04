@@ -1,0 +1,27 @@
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.pubmed.x
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.pubmed.tx
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.pubmed.allx
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.pubmed.y
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.pubmed.ty
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.pubmed.ally
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.pubmed.graph
+Downloading https://github.com/kimiyoung/planetoid/raw/master/data/ind.pubmed.test.index
+Processing...
+Done!
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 183, in <module>
+    main()
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 173, in main
+    experiment1_depth(GLOBAL_CFG, FRODO_HYPER)
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 74, in experiment1_depth
+    _, metrics = run_training(model, data, split_idx, cfg, exp_name)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py", line 267, in run_training
+    "GDR": group_distance_ratio(logits.detach()[:2048], y[:2048]),
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/evaluate.py", line 33, in group_distance_ratio
+    same = x[y.unsqueeze(1) == y].mean()
+           ~^^^^^^^^^^^^^^^^^^^^^
+IndexError: The shape of the mask [2048, 2048] at index 1 does not match the shape of the indexed tensor [2048, 3] at index 1
