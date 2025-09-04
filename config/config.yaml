@@ -1,6 +1,6 @@
 common:
   device: cuda
-  output_root: .research/iteration9/images
+  output_root: .research/iteration10/images
   seeds:
   - 11
   - 22
