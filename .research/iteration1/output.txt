@@ -1,0 +1,73 @@
+=== pip install start Thu Sep  4 06:24:52 UTC 2025 ===
+Collecting torch<2.0.0,>=1.13.0 (from -r requirements.txt (line 1))
+  Downloading torch-1.13.1-cp311-cp311-manylinux1_x86_64.whl.metadata (24 kB)
+Collecting torchvision<0.16.0,>=0.14.0 (from -r requirements.txt (line 2))
+  Downloading torchvision-0.15.2-cp311-cp311-manylinux1_x86_64.whl.metadata (11 kB)
+Collecting numpy>=1.21.0 (from -r requirements.txt (line 3))
+  Downloading numpy-2.3.2-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (62 kB)
+Collecting matplotlib>=3.5.0 (from -r requirements.txt (line 4))
+  Downloading matplotlib-3.10.6-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (11 kB)
+Collecting nanopq==0.2.2 (from -r requirements.txt (line 5))
+  Downloading nanopq-0.2.2-py3-none-any.whl.metadata (4.6 kB)
+Collecting fvcore==0.1.5.post20221221 (from -r requirements.txt (line 6))
+  Downloading fvcore-0.1.5.post20221221.tar.gz (50 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting torchattacks==3.5.1 (from -r requirements.txt (line 7))
+  Downloading torchattacks-3.5.1-py3-none-any.whl.metadata (927 bytes)
+Collecting pyyaml>=6.0 (from -r requirements.txt (line 8))
+  Downloading PyYAML-6.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (2.1 kB)
+Collecting scipy (from nanopq==0.2.2->-r requirements.txt (line 5))
+  Downloading scipy-1.16.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (61 kB)
+Collecting yacs>=0.1.6 (from fvcore==0.1.5.post20221221->-r requirements.txt (line 6))
+  Downloading yacs-0.1.8-py3-none-any.whl.metadata (639 bytes)
+Collecting tqdm (from fvcore==0.1.5.post20221221->-r requirements.txt (line 6))
+  Downloading tqdm-4.67.1-py3-none-any.whl.metadata (57 kB)
+Collecting termcolor>=1.1 (from fvcore==0.1.5.post20221221->-r requirements.txt (line 6))
+  Downloading termcolor-3.1.0-py3-none-any.whl.metadata (6.4 kB)
+Collecting Pillow (from fvcore==0.1.5.post20221221->-r requirements.txt (line 6))
+  Downloading pillow-11.3.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (9.0 kB)
+Collecting tabulate (from fvcore==0.1.5.post20221221->-r requirements.txt (line 6))
+  Downloading tabulate-0.9.0-py3-none-any.whl.metadata (34 kB)
+Collecting iopath>=0.1.7 (from fvcore==0.1.5.post20221221->-r requirements.txt (line 6))
+  Downloading iopath-0.1.10.tar.gz (42 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting requests~=2.25.1 (from torchattacks==3.5.1->-r requirements.txt (line 7))
+  Downloading requests-2.25.1-py2.py3-none-any.whl.metadata (4.2 kB)
+Collecting typing-extensions (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting nvidia-cuda-runtime-cu11==11.7.99 (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Downloading nvidia_cuda_runtime_cu11-11.7.99-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+Collecting nvidia-cudnn-cu11==8.5.0.96 (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Downloading nvidia_cudnn_cu11-8.5.0.96-2-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+Collecting nvidia-cublas-cu11==11.10.3.66 (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Downloading nvidia_cublas_cu11-11.10.3.66-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+Collecting nvidia-cuda-nvrtc-cu11==11.7.99 (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Downloading nvidia_cuda_nvrtc_cu11-11.7.99-2-py3-none-manylinux1_x86_64.whl.metadata (1.5 kB)
+Requirement already satisfied: setuptools in /home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages (from nvidia-cublas-cu11==11.10.3.66->torch<2.0.0,>=1.13.0->-r requirements.txt (line 1)) (65.5.0)
+Collecting wheel (from nvidia-cublas-cu11==11.10.3.66->torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Downloading wheel-0.45.1-py3-none-any.whl.metadata (2.3 kB)
+INFO: pip is looking at multiple versions of torchvision to determine which version is compatible with other requirements. This could take a while.
+Collecting torchvision<0.16.0,>=0.14.0 (from -r requirements.txt (line 2))
+  Downloading torchvision-0.15.1-cp311-cp311-manylinux1_x86_64.whl.metadata (11 kB)
+
+The conflict is caused by:
+    The user requested torch<2.0.0 and >=1.13.0
+    torchattacks 3.5.1 depends on torch>=1.7.1
+    torchvision 0.15.2 depends on torch==2.0.1
+    torchvision 0.15.1 depends on torch==2.0.0
+
+To fix this you could try to:
+1. loosen the range of package versions you've specified
+2. remove package versions to allow pip to attempt to solve the dependency conflict
+
+=== experiment start Thu Sep  4 06:24:57 UTC 2025 ===
