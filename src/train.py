@@ -7,7 +7,7 @@ modules so that this file can stay focussed on the learning logic.
 from __future__ import annotations
 import time
 from pathlib import Path
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any, Tuple, List, Union, Sequence
 
 import yaml
 import torch
@@ -130,6 +130,43 @@ class AutoSpuSwapLoss(nn.Module):
 
 
 # -----------------------------------------------------------------------------
+#  Batch parsing helper (robust to different DataLoader return types)
+# -----------------------------------------------------------------------------
+
+def _parse_batch(batch: Union[Dict[str, Any], Sequence[Any]]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor | None, torch.Tensor | None]:
+    """Extract (images, y, metadata, index) irrespective of the batch structure.
+
+    The WILDS loaders sometimes yield dictionaries and sometimes tuples/list.
+    This helper makes the training code agnostic to that choice.
+    """
+    # Case 1 – dictionary (preferred in newer WILDS versions)
+    if isinstance(batch, dict):
+        # The key for images can be either 'images', 'image', or 'x'. Use the first that exists.
+        for _k in ("images", "image", "x"):
+            if _k in batch:
+                images = batch[_k]
+                break
+        else:
+            raise KeyError("Batch dict does not contain an image key")
+        y = batch["y"]
+        metadata = batch.get("metadata")
+        index = batch.get("index")
+        return images, y, metadata, index
+
+    # Case 2 – tuple/list (x, y, metadata, index) or (x, y, metadata)
+    if isinstance(batch, (list, tuple)):
+        if len(batch) not in {3, 4}:
+            raise ValueError("Unexpected batch format: expected 3 or 4 items, got " + str(len(batch)))
+        images = batch[0]
+        y = batch[1]
+        metadata = batch[2]
+        index = batch[3] if len(batch) == 4 else None
+        return images, y, metadata, index
+
+    raise TypeError("Unsupported batch type: " + str(type(batch)))
+
+
+# -----------------------------------------------------------------------------
 #  Training loop – Waterbirds experiment
 # -----------------------------------------------------------------------------
 
@@ -178,14 +215,13 @@ def run_waterbirds() -> None:
             for epoch in range(CONFIG["training"]["epochs"]):
                 model.train()
                 pbar = tqdm(loaders["train"], desc=f"seed{seed}-{method}-e{epoch+1}", leave=False)
-                for batch in pbar:
+                for raw_batch in pbar:
                     optimiser.zero_grad(set_to_none=True)
-                    x = batch["images"].to(device=DEVICE, dtype=DTYPE)
-                    y = batch["y"].to(device=DEVICE)
+                    x_raw, y_raw, meta_raw, idx_raw = _parse_batch(raw_batch)
+                    x = x_raw.to(device=DEVICE, dtype=DTYPE)
+                    y = y_raw.to(device=DEVICE)
                     idx = (
-                        batch["index"]
-                        if "index" in batch
-                        else torch.arange(x.size(0), device=DEVICE)
+                        idx_raw.to(device=DEVICE) if idx_raw is not None else torch.arange(x.size(0), device=DEVICE)
                     )
 
                     if method == "ERM":
@@ -205,13 +241,19 @@ def run_waterbirds() -> None:
             model.eval()
             preds, ys, gs = [], [], []
             with torch.no_grad():
-                for batch in loaders["val"]:
-                    x = batch["images"].to(device=DEVICE, dtype=DTYPE)
-                    y = batch["y"].to(device=DEVICE)
+                for raw_batch in loaders["val"]:
+                    x_raw, y_raw, meta_raw, idx_raw = _parse_batch(raw_batch)
+                    x = x_raw.to(device=DEVICE, dtype=DTYPE)
+                    y = y_raw.to(device=DEVICE)
                     logits = model(x)
                     preds.append(logits.argmax(1).cpu())
                     ys.append(y.cpu())
-                    gs.append(_extract_group(batch["metadata"], y).cpu())
+                    if meta_raw is not None:
+                        gs.append(_extract_group(meta_raw.to(torch.long), y).cpu())
+                    else:
+                        # Fallback – if metadata missing, treat each sample as env=0
+                        dummy_meta = torch.zeros(y.size(0), 2, dtype=torch.long)
+                        gs.append(_extract_group(dummy_meta, y).cpu())
 
             pred = torch.cat(preds)
             y_all = torch.cat(ys)
