@@ -1,75 +1,13 @@
-global:
-  device: cuda
-  num_workers: 8
-  data_dir: data
-  amp: true
+dataset:
+  root: data/cifar_toy
+  bias_ratio: 0.9
+experiment:
+  seeds: [0, 1, 2, 3, 4]
+train:
   batch_size: 128
-  num_epochs: 100
-  seed_list:
-  - 1
-  - 2
-  - 3
-  - 4
-  - 5
-  figure_dir: figures
-datasets:
-  waterbirds:
-    url: https://nlp.stanford.edu/data/dro/waterbird_complete95_forest2water2.tar.gz
-    md5: null
-  celeba:
-    url: https://drive.google.com/uc?export=download&id=1eU0r9zgGGeJ3CmbHsMmWLtOcFBPwa4ar
-  camelyon17:
-    wilds_cmd: python -m wilds.download_datasets --datasets camelyon17
-  pacs:
-    hf_repo: flwrlabs/pacs
-  ninco:
-    url: https://github.com/j-cb/NINCO/releases/download/v1.0/ninco_v1.0.tar.gz
-models:
-  resnet50:
-    url: https://download.pytorch.org/models/resnet50-0676ba61.pth
-  vit_b16_vim:
-    url: https://github.com/haoqiwang/vim/releases/download/v1.0/vit_base_patch16_224_vim.pth
-  sd_inpaint:
-    hf_repo: stable-diffusion-v1-5/stable-diffusion-inpainting
-  bisenet_face:
-    hf_repo: yakhyo/face-parsing
-    filename: resnet18.pt
-experiment1:
-  description: Robustness under Real-World Distribution Shifts (Exp-1)
-  datasets:
-  - waterbirds
-  - celeba
-  - camelyon17
-  - pacs
-  - ninco
-  methods:
-  - ERM
-  - GroupDRO
-  - IRM
-  - ENP
-  - AutoACER
-  - SDA
-  - AdaptOD
-  - CaDER
-  hyper:
-    lr: 0.05
-    momentum: 0.9
-    weight_decay: 0.0001
-  cader:
-    K: 2
-    lambda: 1.0
-    mu: 0.1
-experiment2:
-  description: Mask quality & causal flip (Exp-2)
-  datasets:
-  - waterbirds
-  - celeba
-experiment3:
-  description: Stress-test with symmetric label noise (Exp-3)
-  datasets:
-  - waterbirds
-  noise_levels:
-  - 0.0
-  - 0.1
-  - 0.2
-  - 0.3
+  epochs: 15
+  lr: 0.05
+model:
+  lam: 1.0
+  mu: 0.1
+  K: 2

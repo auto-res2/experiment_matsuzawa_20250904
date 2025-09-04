@@ -1,115 +1,89 @@
 """src/train.py
-Training loop and utilities used by all experiments.
+Training utilities – wraps the whole optimisation loop that is reused by
+main.py and potential future experiments.
 """
 from __future__ import annotations
 
 import json
-import os
 import time
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict
 
 import torch
+from torch.utils.data import DataLoader
 
-from .evaluate import evaluate, save_figures
-
-# -----------------------------------------------------------------------------
-# AMP is enabled by default on CUDA devices that support it.  Fallback to FP32
-# on CPU or older GPUs.
-# -----------------------------------------------------------------------------
-
-def _prepare_amp(cfg: Dict[str, Any]) -> torch.cuda.amp.GradScaler:
-    """Return a GradScaler that is enabled only when autocast should be used."""
-    amp_requested = bool(cfg.get("amp", True))
-    device_is_cuda = torch.cuda.is_available() and torch.cuda.current_device() >= 0
-    scaler = torch.cuda.amp.GradScaler(enabled=amp_requested and device_is_cuda)
-    return scaler
+from .evaluate import accuracy, save_bar
 
 
-# -----------------------------------------------------------------------------
-#  Main training function – one model / one seed
-# -----------------------------------------------------------------------------
-
-def train(
+def run_one(
     model: torch.nn.Module,
-    loader_tr: torch.utils.data.DataLoader,
-    loader_val: torch.utils.data.DataLoader,
-    cfg: Dict[str, Any],
+    loader_tr: DataLoader,
+    loader_val: DataLoader,
+    cfg: Dict[str, float | int],
     device: torch.device,
-    exp_name: str,
-    method_name: str,
-    seed: int,
-) -> Dict[str, Any]:
-    """Train ``model`` for a single run and return the evaluation dictionary.
+    tag: str,
+) -> float:
+    """Train *model* on *loader_tr* and evaluate on *loader_val*.
 
     Parameters
     ----------
     model : torch.nn.Module
-        Neural network to train.  Will be **moved** onto ``device``.
+        The network that should be trained.
     loader_tr / loader_val : DataLoader
-        Training / validation loaders.
-    cfg : Dict[str, Any]
-        Hyper-parameters *including* ``lr, momentum, weight_decay, num_epochs``.
+        Dataloaders for training and validation.
+    cfg : Dict
+        Contains the hyper-parameters ``lr`` and ``epochs``.
     device : torch.device
-    exp_name / method_name / seed : str | int
-        Identifiers used for checkpoint & figure file names.
+        CPU or GPU.
+    tag : str
+        A short string to identify artefacts on disk.
     """
-
-    model = model.to(device)
-    optimiser = torch.optim.SGD(
-        model.parameters(),
-        lr=cfg["lr"],
-        momentum=cfg.get("momentum", 0.9),
-        weight_decay=cfg.get("weight_decay", 1e-4),
+    model.to(device)
+    opt = torch.optim.SGD(
+        model.parameters(), lr=float(cfg["lr"]), momentum=0.9, weight_decay=1e-4
     )
+    scaler = torch.cuda.amp.GradScaler(enabled=device.type == "cuda")
 
-    scaler = _prepare_amp(cfg)
-
-    best_val = 0.0
-    ckpt_path = Path(f"ckpt_{exp_name}_{method_name}_seed{seed}.pt")
-
-    for epoch in range(int(cfg["num_epochs"])):
+    best = 0.0
+    for ep in range(int(cfg["epochs"])):
         model.train()
-        running_loss, seen = 0.0, 0
-
+        t0 = time.time()
+        loss_sum = 0.0
+        n = 0
         for x, y in loader_tr:
-            x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
-            optimiser.zero_grad(set_to_none=True)
-
-            with torch.cuda.amp.autocast(enabled=scaler.is_enabled()):
+            x, y = x.to(device), y.to(device)
+            opt.zero_grad(set_to_none=True)
+            with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
                 logits = model(x)
-                if method_name.lower() == "cader" and hasattr(model, "loss_fn"):
-                    loss, _ = model.loss_fn(logits, y)
+                if hasattr(model, "loss_fn"):
+                    loss, _parts = model.loss_fn(logits, y)  # type: ignore[attr-defined]
                 else:
                     loss = torch.nn.functional.cross_entropy(logits, y)
-
             scaler.scale(loss).backward()
-            scaler.step(optimiser)
+            scaler.step(opt)
             scaler.update()
+            loss_sum += loss.item() * y.size(0)
+            n += y.size(0)
 
-            running_loss += loss.item() * y.size(0)
-            seen += y.size(0)
+        val_acc = accuracy(model, loader_val, device)
+        if val_acc > best:
+            best = val_acc
+            torch.save(model.state_dict(), f"best_{tag}.pt")
 
-        train_loss = running_loss / max(seen, 1)
-        val_res = evaluate(model, loader_val, device)
-        val_acc = val_res["acc"]
         print(
-            f"[{exp_name}] {method_name} – seed {seed}  epoch {epoch:03d}  "
-            f"loss {train_loss:.3f}  val-acc {val_acc:.3f}"
+            f"[epoch {ep:02d}] loss {loss_sum / max(n, 1):.3f}  "
+            f"val {val_acc:.3f}  best {best:.3f}  time {time.time() - t0:.1f}s"
         )
 
-        # Save best checkpoint
-        if val_acc > best_val:
-            best_val = val_acc
-            torch.save(model.state_dict(), ckpt_path)
+    # ---- load best checkpoint & final metric --------------------------------
+    model.load_state_dict(torch.load(f"best_{tag}.pt", map_location=device))
+    best_acc = accuracy(model, loader_val, device)
 
-    # ---------------------------------------------------------------------
-    # Finished training – load best model & return final metrics
-    # ---------------------------------------------------------------------
-    if ckpt_path.exists():
-        model.load_state_dict(torch.load(ckpt_path, map_location=device))
-    final_res = evaluate(model, loader_val, device, detailed=True)
+    # ---- persist artefacts ---------------------------------------------------
+    out_dir = Path(".research/iteration7/images")
+    save_bar(best_acc, tag, out_dir)
+    Path("results").mkdir(exist_ok=True)
+    with open(f"results/{tag}.json", "w") as fh:
+        json.dump({"val_acc": best_acc}, fh)
 
-    # Persist figures
-    save_figures(final_res, f"{exp_name}_{method_name}_seed{seed}")
-    return final_res
+    return best_acc

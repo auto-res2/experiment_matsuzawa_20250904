@@ -1,87 +1,48 @@
+"""src/evaluate.py
+Evaluation helpers (metrics & tiny visualisations).
+"""
 from __future__ import annotations
 
-"""src/evaluate.py
-Model evaluation utilities + simple plotting helpers.
-"""
 from pathlib import Path
-from typing import Dict, Any
+from typing import Union
 
 import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
+from torch.utils.data import DataLoader
 
 sns.set_theme(style="whitegrid")
 
 
-# -----------------------------------------------------------------------------
-#  Core evaluation – returns accuracy / loss.  If ``detailed`` is True the
-#  dictionary is augmented with additional diagnostics for later analysis.
-# -----------------------------------------------------------------------------
-
-def evaluate(
-    model: torch.nn.Module,
-    loader: torch.utils.data.DataLoader,
-    device: torch.device,
-    detailed: bool = False,
-) -> Dict[str, Any]:
+def accuracy(model: torch.nn.Module, loader: DataLoader, device: torch.device) -> float:
+    """Standard top-1 accuracy."""
     model.eval()
-    correct = total = 0
-    losses = []
-    ce = torch.nn.CrossEntropyLoss()
-
+    correct = 0
+    total = 0
     with torch.no_grad():
         for x, y in loader:
-            x, y = x.to(device, non_blocking=True), y.to(device, non_blocking=True)
-            logits = model(x)
-            loss = ce(logits, y)
-            pred = logits.argmax(dim=1)
-            correct += (pred == y).sum().item()
+            x, y = x.to(device), y.to(device)
+            preds = model(x).argmax(1)
+            correct += (preds == y).sum().item()
             total += y.size(0)
-            losses.append(loss.item() * y.size(0))
-
-    acc = correct / max(total, 1)
-    res: Dict[str, Any] = {
-        "acc": acc,
-        "n": total,
-        "loss": sum(losses) / max(total, 1),
-    }
-
-    if detailed:
-        res["all_preds"] = None  # place-holder – could store logits / preds here
-
-    return res
+    return correct / max(total, 1)
 
 
-# -----------------------------------------------------------------------------
-#  Simple bar plot – saves to ``.research/iteration6/images/accuracy_<tag>.pdf``.
-# -----------------------------------------------------------------------------
+def save_bar(value: float, name: str, out_dir: Union[str, Path]) -> None:
+    """Save a minimalist bar plot so that CI stores a visual artefact."""
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-def save_figures(res_dict: Dict[str, Any], tag: str) -> None:
-    """Save accuracy bar plot into the mandated location.
-
-    All experiment figures must reside in ``.research/iteration6/images`` to
-    comply with the evaluation harness.  The directory structure is created on
-    demand.
-    """
-    # NOTE: The evaluation harness expects all images for *this* iteration to be
-    # stored in ``.research/iteration6/images``.  This path is therefore hard-
-    # coded and **must not** be changed unless the harness itself is updated.
-    img_dir = Path(".research") / "iteration6" / "images"
-    img_dir.mkdir(parents=True, exist_ok=True)
-
-    fig, ax = plt.subplots(figsize=(4, 3))
-    ax.bar([0], [res_dict["acc"]])
-    ax.set_xticks([0])
-    ax.set_xticklabels(["accuracy"])
+    fig, ax = plt.subplots(figsize=(3, 3))
+    ax.bar([0], [value])
     ax.set_ylim(0, 1)
+    ax.set_xticks([])
     ax.set_ylabel("Accuracy")
-    ax.set_title(tag)
+    ax.set_title(name)
+    ax.text(0, min(value + 0.02, 0.98), f"{value * 100:.1f}%", ha="center")
 
-    # Annotate – place the text slightly above the bar for readability
-    ax.text(0, min(res_dict["acc"] + 0.02, 0.98), f"{res_dict['acc'] * 100:.1f}%", ha="center")
-
-    out_path = img_dir / f"accuracy_{tag}.pdf"
+    pdf = out_dir / f"accuracy_{name}.pdf"
     fig.tight_layout()
-    fig.savefig(out_path, bbox_inches="tight")
-    print("[evaluate] Saved figure:", out_path)
+    fig.savefig(pdf, bbox_inches="tight")
+    print("[figure] saved", pdf)
     plt.close(fig)
