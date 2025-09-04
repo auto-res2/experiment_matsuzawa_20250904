@@ -1,6 +1,3 @@
-"""src/evaluate.py
-Metric computation and figure helpers.
-"""
 from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List
@@ -30,7 +27,7 @@ def effective_rank(x: torch.Tensor) -> float:
         if q == 0
         else torch.linalg.svd(x_[:, :q], full_matrices=False)
     )
-    p = (s**2) / (s**2).sum()
+    p = (s ** 2) / (s ** 2).sum()
     er = torch.exp(-(p * torch.log(p + 1e-9)).sum()) / x_.shape[1]
     return float(er)
 
@@ -73,7 +70,8 @@ def group_distance_ratio(x: torch.Tensor, y: torch.Tensor) -> float:
 #  Figure helper
 # ------------------------------------------------------------------
 
-_SAVE_DIR = Path(".research/iteration2/images")
+# Enforce the updated output directory (see task instructions)
+_SAVE_DIR = Path(".research/iteration3/images")
 
 
 def save_lineplot(
