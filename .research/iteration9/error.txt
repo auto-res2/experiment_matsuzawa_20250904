@@ -1,0 +1,33 @@
+DGL backend not selected or invalid.  Assuming PyTorch for now.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 67, in <module>
+    from .evaluate import run_depth, run_noise, run_papers
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/evaluate.py", line 17, in <module>
+    from .train import AdaPropGCN, train_model
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py", line 10, in <module>
+    import dgl.nn as dglnn
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/__init__.py", line 16, in <module>
+    from . import (
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/dataloading/__init__.py", line 13, in <module>
+    from .dataloader import *
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/dataloading/dataloader.py", line 27, in <module>
+    from ..distributed import DistGraph
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/distributed/__init__.py", line 5, in <module>
+    from .dist_graph import DistGraph, DistGraphServer, edge_split, node_split
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/distributed/dist_graph.py", line 11, in <module>
+    from .. import backend as F, graphbolt as gb, heterograph_index
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/graphbolt/__init__.py", line 10, in <module>
+    from .dataloader import *
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/graphbolt/dataloader.py", line 12, in <module>
+    from .impl.neighbor_sampler import SamplePerLayer
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/graphbolt/impl/__init__.py", line 7, in <module>
+    from .legacy_dataset import *
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/graphbolt/impl/legacy_dataset.py", line 11, in <module>
+    from .ondisk_dataset import OnDiskTask
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/graphbolt/impl/ondisk_dataset.py", line 34, in <module>
+    from .ondisk_metadata import (
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/dgl/graphbolt/impl/ondisk_metadata.py", line 6, in <module>
+    import pydantic
+ModuleNotFoundError: No module named 'pydantic'
