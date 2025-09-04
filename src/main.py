@@ -17,10 +17,10 @@ import types
 class _NoOp:  # pylint: disable=too-few-public-methods
     """A do-nothing callable/attr container used for stubbing."""
 
-    def __call__(self, *_, **__):  # noqa: D401, D401 – returns itself so that any chaining works
+    def __call__(self, *_, **__):  # noqa: D401 – returns itself so that any chaining works
         return self
 
-    def __getattr__(self, _):  # noqa: D401, D401 – always succeed
+    def __getattr__(self, _):  # noqa: D401 – always succeed
         return self
 
     def __iter__(self):
@@ -38,7 +38,9 @@ if "torchdata" not in sys.modules:
     # ---- torchdata.datapipes.* ---------------------------------------------
     dp_mod = types.ModuleType("torchdata.datapipes")
     iter_mod = types.ModuleType("torchdata.datapipes.iter")
-    iter_mod.IterDataPipe = _NoOp  # minimal placeholder
+    # Minimal placeholders that GraphBolt may try to import -------------------
+    iter_mod.IterDataPipe = _NoOp  # base class in the real package
+    iter_mod.Mapper = _NoOp        # GraphBolt does: ``from ... import Mapper``
     dp_mod.iter = iter_mod
 
     sys.modules["torchdata.datapipes"] = dp_mod
@@ -70,7 +72,7 @@ from .evaluate import run_depth, run_noise, run_papers
 CFG_DEFAULT_YAML = """
 common:
   device: cuda            # auto-fallback handled in code
-  output_root: .research/iteration8/images
+  output_root: .research/iteration9/images
   seeds: [11, 22, 33, 44, 55]
 train:
   lr: 3e-3
@@ -101,10 +103,10 @@ if CONFIG_PATH.exists():
 else:
     CFG = yaml.safe_load(CFG_DEFAULT_YAML)
 
-# -------- ensure image path complies with iteration8 requirement -----------
-ITER8_PATH = ".research/iteration8/images"
-if CFG["common"].get("output_root", "") != ITER8_PATH:
-    CFG["common"]["output_root"] = ITER8_PATH
+# -------- ensure image path complies with iteration9 requirement -----------
+ITER9_PATH = ".research/iteration9/images"
+if CFG["common"].get("output_root", "") != ITER9_PATH:
+    CFG["common"]["output_root"] = ITER9_PATH
 
 # -------- device fallback ---------------------------------------------------
 if CFG["common"]["device"] == "cuda" and not torch.cuda.is_available():
