@@ -1,0 +1,85 @@
+=== pip install start Thu Sep  4 05:44:52 UTC 2025 ===
+Collecting torch<2.0.0,>=1.13.0 (from -r requirements.txt (line 1))
+  Using cached torch-1.13.1-cp311-cp311-manylinux1_x86_64.whl.metadata (24 kB)
+Collecting torchvision<0.18,>=0.14 (from -r requirements.txt (line 2))
+  Using cached torchvision-0.17.2-cp311-cp311-manylinux1_x86_64.whl.metadata (6.6 kB)
+Collecting wilds>=2.0 (from -r requirements.txt (line 3))
+  Using cached wilds-2.0.0-py3-none-any.whl.metadata (22 kB)
+Collecting requests>=2.31 (from -r requirements.txt (line 4))
+  Using cached requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+Collecting diffusers==0.27.2 (from -r requirements.txt (line 5))
+  Using cached diffusers-0.27.2-py3-none-any.whl.metadata (18 kB)
+Collecting transformers==4.40.2 (from -r requirements.txt (line 6))
+  Using cached transformers-4.40.2-py3-none-any.whl.metadata (137 kB)
+Collecting timm==0.9.12 (from -r requirements.txt (line 7))
+  Using cached timm-0.9.12-py3-none-any.whl.metadata (60 kB)
+Collecting albumentations<1.5.0,>=1.4.8 (from -r requirements.txt (line 11))
+  Downloading albumentations-1.4.24-py3-none-any.whl.metadata (37 kB)
+Collecting matplotlib>=3.8 (from -r requirements.txt (line 12))
+  Using cached matplotlib-3.10.6-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (11 kB)
+Collecting seaborn>=0.13 (from -r requirements.txt (line 13))
+  Using cached seaborn-0.13.2-py3-none-any.whl.metadata (5.4 kB)
+Collecting numpy<2 (from -r requirements.txt (line 14))
+  Using cached numpy-1.26.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (61 kB)
+Collecting PyYAML>=6.0 (from -r requirements.txt (line 15))
+  Using cached PyYAML-6.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (2.1 kB)
+Collecting importlib-metadata (from diffusers==0.27.2->-r requirements.txt (line 5))
+  Downloading importlib_metadata-8.7.0-py3-none-any.whl.metadata (4.8 kB)
+Collecting filelock (from diffusers==0.27.2->-r requirements.txt (line 5))
+  Using cached filelock-3.19.1-py3-none-any.whl.metadata (2.1 kB)
+Collecting huggingface-hub>=0.20.2 (from diffusers==0.27.2->-r requirements.txt (line 5))
+  Using cached huggingface_hub-0.34.4-py3-none-any.whl.metadata (14 kB)
+Collecting regex!=2019.12.17 (from diffusers==0.27.2->-r requirements.txt (line 5))
+  Downloading regex-2025.9.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (40 kB)
+Collecting safetensors>=0.3.1 (from diffusers==0.27.2->-r requirements.txt (line 5))
+  Downloading safetensors-0.6.2-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.1 kB)
+Collecting Pillow (from diffusers==0.27.2->-r requirements.txt (line 5))
+  Using cached pillow-11.3.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (9.0 kB)
+Collecting packaging>=20.0 (from transformers==4.40.2->-r requirements.txt (line 6))
+  Using cached packaging-25.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting tokenizers<0.20,>=0.19 (from transformers==4.40.2->-r requirements.txt (line 6))
+  Downloading tokenizers-0.19.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.7 kB)
+Collecting tqdm>=4.27 (from transformers==4.40.2->-r requirements.txt (line 6))
+  Using cached tqdm-4.67.1-py3-none-any.whl.metadata (57 kB)
+Collecting typing-extensions (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Using cached typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting nvidia-cuda-runtime-cu11==11.7.99 (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Using cached nvidia_cuda_runtime_cu11-11.7.99-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+Collecting nvidia-cudnn-cu11==8.5.0.96 (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Using cached nvidia_cudnn_cu11-8.5.0.96-2-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+Collecting nvidia-cublas-cu11==11.10.3.66 (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Using cached nvidia_cublas_cu11-11.10.3.66-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+Collecting nvidia-cuda-nvrtc-cu11==11.7.99 (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Using cached nvidia_cuda_nvrtc_cu11-11.7.99-2-py3-none-manylinux1_x86_64.whl.metadata (1.5 kB)
+Requirement already satisfied: setuptools in /home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages (from nvidia-cublas-cu11==11.10.3.66->torch<2.0.0,>=1.13.0->-r requirements.txt (line 1)) (65.5.0)
+Collecting wheel (from nvidia-cublas-cu11==11.10.3.66->torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Using cached wheel-0.45.1-py3-none-any.whl.metadata (2.3 kB)
+INFO: pip is looking at multiple versions of torchvision to determine which version is compatible with other requirements. This could take a while.
+Collecting torchvision<0.18,>=0.14 (from -r requirements.txt (line 2))
+  Using cached torchvision-0.17.1-cp311-cp311-manylinux1_x86_64.whl.metadata (6.6 kB)
+  Using cached torchvision-0.17.0-cp311-cp311-manylinux1_x86_64.whl.metadata (6.6 kB)
+  Using cached torchvision-0.16.2-cp311-cp311-manylinux1_x86_64.whl.metadata (6.6 kB)
+  Using cached torchvision-0.16.1-cp311-cp311-manylinux1_x86_64.whl.metadata (6.6 kB)
+  Using cached torchvision-0.16.0-cp311-cp311-manylinux1_x86_64.whl.metadata (6.6 kB)
+  Using cached torchvision-0.15.2-cp311-cp311-manylinux1_x86_64.whl.metadata (11 kB)
+  Using cached torchvision-0.15.1-cp311-cp311-manylinux1_x86_64.whl.metadata (11 kB)
+INFO: pip is still looking at multiple versions of torchvision to determine which version is compatible with other requirements. This could take a while.
+INFO: This is taking longer than usual. You might need to provide the dependency resolver with stricter constraints to reduce runtime. See https://pip.pypa.io/warnings/backtracking for guidance. If you want to abort this run, press Ctrl + C.
+
+The conflict is caused by:
+    The user requested torch<2.0.0 and >=1.13.0
+    timm 0.9.12 depends on torch>=1.7
+    torchvision 0.17.2 depends on torch==2.2.2
+    torchvision 0.17.1 depends on torch==2.2.1
+    torchvision 0.17.0 depends on torch==2.2.0
+    torchvision 0.16.2 depends on torch==2.1.2
+    torchvision 0.16.1 depends on torch==2.1.1
+    torchvision 0.16.0 depends on torch==2.1.0
+    torchvision 0.15.2 depends on torch==2.0.1
+    torchvision 0.15.1 depends on torch==2.0.0
+
+To fix this you could try to:
+1. loosen the range of package versions you've specified
+2. remove package versions to allow pip to attempt to solve the dependency conflict
+
+=== experiment start Thu Sep  4 05:44:58 UTC 2025 ===
