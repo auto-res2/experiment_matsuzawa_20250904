@@ -1,11 +1,11 @@
+from __future__ import annotations
+
 """
 src/main.py
 -----------
 Entry point:  python -m src.main
 Orchestrates the complete Experiment-1 suite using the refactored modules.
 """
-from __future__ import annotations
-
 import json
 import sys
 import time
@@ -53,6 +53,17 @@ def load_cfg() -> dict:
 #  MAIN EXPERIMENT LOOP
 # -----------------------------------------------------------------------------
 
+def _to_float(val):
+    """Utility: cast *val* to float unless it is already numeric.
+
+    Torch's optimisers expect `lr`, `momentum`, `weight_decay`, … to be floats.
+    When the YAML parser reads numbers that look like strings (e.g. "5e-4")
+    they may be returned as *str* on some versions/platforms.  Converting here
+    guarantees compatibility regardless of upstream behaviour.
+    """
+    return float(val) if isinstance(val, str) else val
+
+
 def run_experiment() -> None:
     cfg = load_cfg()
 
@@ -82,16 +93,16 @@ Each vision task: 5 epochs   MNIST: 1 epoch
         benchmark = get_benchmark(ds_cfg["name"], cfg)
 
         for budget_mb in cfg["buffer_budgets_mb"]:
-            max_bytes = int(budget_mb * 1024 * 1024)
+            max_bytes = int(float(budget_mb) * 1024 * 1024)
 
             for seed in cfg["seed"]:
                 set_seed(seed)
                 model = build_model(dataset_key).to(device)
                 optimizer = torch.optim.SGD(
                     model.parameters(),
-                    lr=cfg["optim"]["lr"],
-                    momentum=cfg["optim"]["momentum"],
-                    weight_decay=cfg["optim"]["weight_decay"],
+                    lr=_to_float(cfg["optim"]["lr"]),
+                    momentum=_to_float(cfg["optim"]["momentum"]),
+                    weight_decay=_to_float(cfg["optim"]["weight_decay"]),
                 )
                 cpqr = CPQRBuffer(
                     dim=cfg["cpqr"]["dim"],
