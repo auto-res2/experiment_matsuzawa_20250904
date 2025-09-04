@@ -1,0 +1,9 @@
+Generating train split:   0%|          | 0/4795 [00:00<?, ? examples/s]Generating train split:  46%|████▌     | 2200/4795 [00:00<00:00, 20602.23 examples/s]Generating train split:  96%|█████████▌| 4600/4795 [00:00<00:00, 22050.99 examples/s]Generating train split: 100%|██████████| 4795/4795 [00:00<00:00, 21623.77 examples/s]
+Generating validation split:   0%|          | 0/1199 [00:00<?, ? examples/s]Generating validation split: 100%|██████████| 1199/1199 [00:00<00:00, 20275.49 examples/s]
+Generating test split:   0%|          | 0/5794 [00:00<?, ? examples/s]Generating test split:  40%|███▉      | 2300/5794 [00:00<00:00, 22299.14 examples/s]Generating test split:  86%|████████▋ | 5000/5794 [00:00<00:00, 24621.43 examples/s]Generating test split: 100%|██████████| 5794/5794 [00:00<00:00, 24614.57 examples/s]
+/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py:45: UserWarning: AutoSpuSwap pipeline not yet implemented – falling back to identity counter-factuals. Set autospu.enabled: false in the YAML config to silence this warning.
+  warnings.warn(
+/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py:97: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  self.scaler = GradScaler()
+/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py:145: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with autocast():
