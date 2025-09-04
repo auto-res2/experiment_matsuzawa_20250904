@@ -1,0 +1,25 @@
+  Running command git clone --filter=blob:none --quiet https://github.com/openai/CLIP.git /tmp/pip-req-build-kk3qydth
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 42, in <module>
+    main()
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 35, in main
+    run_waterbirds()
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py", line 229, in run_waterbirds
+    loaders_fn, dataset_meta = get_waterbirds_loaders(
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/preprocess.py", line 34, in get_waterbirds_loaders
+    wb = get_dataset("waterbirds", version="2.0", root_dir=str(DATA_DIR), download=True)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/wilds/get_dataset.py", line 75, in get_dataset
+    return WaterbirdsDataset(version=version, **dataset_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/wilds/datasets/waterbirds_dataset.py", line 64, in __init__
+    self._data_dir = self.initialize_data_dir(root_dir, download)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/wilds/datasets/wilds_dataset.py", line 333, in initialize_data_dir
+    self.check_version()
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/wilds/datasets/wilds_dataset.py", line 395, in check_version
+    raise ValueError(f'Version {self.version} not supported. Must be in {self.versions_dict.keys()}.')
+ValueError: Version 2.0 not supported. Must be in dict_keys(['1.0']).
