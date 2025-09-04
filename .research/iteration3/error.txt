@@ -1,0 +1,51 @@
+Generating train split:   0%|          | 0/4795 [00:00<?, ? examples/s]Generating train split:  46%|████▌     | 2200/4795 [00:00<00:00, 21264.14 examples/s]Generating train split:  98%|█████████▊| 4700/4795 [00:00<00:00, 22658.59 examples/s]Generating train split: 100%|██████████| 4795/4795 [00:00<00:00, 22186.63 examples/s]
+Generating validation split:   0%|          | 0/1199 [00:00<?, ? examples/s]Generating validation split: 100%|██████████| 1199/1199 [00:00<00:00, 21132.26 examples/s]
+Generating test split:   0%|          | 0/5794 [00:00<?, ? examples/s]Generating test split:  40%|███▉      | 2300/5794 [00:00<00:00, 22657.38 examples/s]Generating test split:  86%|████████▋ | 5000/5794 [00:00<00:00, 24702.48 examples/s]Generating test split: 100%|██████████| 5794/5794 [00:00<00:00, 24728.41 examples/s]
+/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py:45: UserWarning: AutoSpuSwap pipeline not yet implemented – falling back to identity counter-factuals. Set autospu.enabled: false in the YAML config to silence this warning.
+  warnings.warn(
+/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py:97: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  self.scaler = GradScaler()
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 107, in <module>
+    main()
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 100, in main
+    best_val = trainer.run()
+               ^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py", line 113, in run
+    tr_acc, tr_loss = self._run_epoch(epoch, train=True)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py", line 138, in _run_epoch
+    for batch in loader:
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 734, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1516, in _next_data
+    return self._process_data(data, worker_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1551, in _process_data
+    data.reraise()
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/_utils.py", line 769, in reraise
+    raise exception
+AttributeError: Caught AttributeError in DataLoader worker process 0.
+Original Traceback (most recent call last):
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/utils/data/_utils/worker.py", line 349, in _worker_loop
+    data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/utils/data/_utils/fetch.py", line 52, in <listcomp>
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+            ~~~~~~~~~~~~^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/preprocess.py", line 98, in __getitem__
+    img = Image.open(item["image"]).convert("RGB")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/PIL/Image.py", line 3524, in open
+    prefix = fp.read(16)
+             ^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/PIL/JpegImagePlugin.py", line 400, in __getattr__
+    raise AttributeError(name)
+AttributeError: read
+
