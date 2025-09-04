@@ -6,5 +6,82 @@
     "PairNorm GNN",
     "DropEdge GNN",
     "graph rewiring oversmoothing"
+  ],
+  "research_study_list": [
+    {
+      "title": "A Non-Asymptotic Analysis of Oversmoothing in Graph Neural Networks"
+    },
+    {
+      "title": "Demystifying Oversmoothing in Attention-Based Graph Neural Networks"
+    },
+    {
+      "title": "PairNorm: Tackling Oversmoothing in GNNs"
+    },
+    {
+      "title": "Graph Neural Networks Do Not Always Oversmooth"
+    },
+    {
+      "title": "Towards Deeper Graph Neural Networks with Differentiable Group Normalization"
+    },
+    {
+      "title": "Node Dependent Local Smoothing for Scalable Graph Learning"
+    },
+    {
+      "title": "Node Dependent Local Smoothing for Scalable Graph Learning"
+    },
+    {
+      "title": "Not too little, not too much: a theoretical analysis of graph (over)smoothing"
+    },
+    {
+      "title": "A Non-Asymptotic Analysis of Oversmoothing in Graph Neural Networks"
+    },
+    {
+      "title": "Mip-Splatting: Alias-free 3D Gaussian Splatting"
+    },
+    {
+      "title": "PairNorm: Tackling Oversmoothing in GNNs"
+    },
+    {
+      "title": "GraphNorm: A Principled Approach to Accelerating Graph Neural Network Training"
+    },
+    {
+      "title": "ContraNorm: A Contrastive Learning Perspective on Oversmoothing and Beyond"
+    },
+    {
+      "title": "GRANOLA: Adaptive Normalization for Graph Neural Networks"
+    },
+    {
+      "title": "Towards Deeper Graph Neural Networks with Differentiable Group Normalization"
+    },
+    {
+      "title": "DropEdge: Towards Deep Graph Convolutional Networks on Node Classification"
+    },
+    {
+      "title": "DropGNN: Random Dropouts Increase the Expressiveness of Graph Neural Networks"
+    },
+    {
+      "title": "DropGNN: Random Dropouts Increase the Expressiveness of Graph Neural Networks"
+    },
+    {
+      "title": "GNNDelete: A General Strategy for Unlearning in Graph Neural Networks"
+    },
+    {
+      "title": "Interpreting Graph Neural Networks for NLP With Differentiable Edge Masking"
+    },
+    {
+      "title": "FoSR: First-order spectral rewiring for addressing oversquashing in GNNs"
+    },
+    {
+      "title": "Locality-Aware Graph Rewiring in GNNs"
+    },
+    {
+      "title": "Revisiting Over-smoothing and Over-squashing Using Ollivier-Ricci Curvature"
+    },
+    {
+      "title": "A Non-Asymptotic Analysis of Oversmoothing in Graph Neural Networks"
+    },
+    {
+      "title": "Understanding Oversquashing in GNNs through the Lens of Effective Resistance"
+    }
   ]
 }
