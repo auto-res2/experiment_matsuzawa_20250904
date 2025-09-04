@@ -509,5 +509,67 @@
         "future_research_directions": "Future research could delve deeper into the identified trade-off between shrinking the feature extractor function class (reducing the transferability loss bound) and potentially increasing the source domain loss. Expanding the data augmentation analysis to cover a broader family of transformations, non-linear cases, or more complex loss functions beyond squared loss would be beneficial. Further investigation into the conditions under which adversarial training consistently acts as a generalizable regularizer, potentially relaxing current assumptions, is also a promising direction. Ultimately, the insights gained could be leveraged to develop novel regularization techniques or data augmentation strategies explicitly designed to optimize domain transferability."
       }
     }
+  ],
+  "reference_research_study_list": [
+    {
+      "title": "Evaluating clip: towards characterization of broader capabilities and downstream implications"
+    },
+    {
+      "title": "On the opportunities and risks of foundation models"
+    },
+    {
+      "title": "Slice finder: Automated data slicing for model validation"
+    },
+    {
+      "title": "Environment inference for invariant learning"
+    },
+    {
+      "title": "Domino: Discovering systematic errors with cross-modal embeddings"
+    },
+    {
+      "title": "On feature learning in the presence of spurious correlations"
+    },
+    {
+      "title": "Distilling model failures as directions in latent space"
+    },
+    {
+      "title": "Mdetr-modulated detection for end-to-end multi-modal understanding"
+    },
+    {
+      "title": "WILDS: A benchmark of in-the-wild distribution shifts"
+    },
+    {
+      "title": "Visual genome: Connecting language and vision using crowdsourced dense image annotations"
+    },
+    {
+      "title": "Grounded language-image pre-training"
+    },
+    {
+      "title": "Just train twice: Improving group robustness without training group information"
+    },
+    {
+      "title": "Deep learning face attributes in the wild"
+    },
+    {
+      "title": "Causal transportability for visual recognition"
+    },
+    {
+      "title": "Simple open-vocabulary object detection with vision transformers"
+    },
+    {
+      "title": "A comprehensive study of image classification model sensitivity to foregrounds, backgrounds, and visual attributes"
+    },
+    {
+      "title": "Learning from failure: De-biasing classifier from biased classifier"
+    },
+    {
+      "title": "Spread spurious attribute: Improving worst-group accuracy with spurious attribute estimation"
+    },
+    {
+      "title": "The effectiveness of feature attribution methods and its correlation with automatic evaluation scores"
+    },
+    {
+      "title": "Towards accountable ai: Hybrid human-machine analyses for characterizing system failure"
+    }
   ]
 }
