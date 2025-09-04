@@ -1,8 +1,16 @@
 global:
-  dropout: 0.5
+  device: cuda:0
+  data_root: data
   hidden: 128
+  dropout: 0.5
   patience: 50
+  lr_grid: [0.005, 0.01, 0.02]
+  wd_grid: [0.0, 0.0001, 0.0005]
   seeds: [0,1,2,3,4,5,6,7,8,9]
+  datasets_e1: [Pubmed, Chameleon, ogbn-arxiv]
+  depths_e1: [2, 16, 64, 128]
+  variants_e1: [vanilla, pairnorm, contranorm, ndls, dropedge, frodo]
+
 frodo:
   gamma: 5.0
   sigma: 0.1

@@ -1,96 +1,116 @@
+"""
+evaluate.py – experiment orchestration, statistical analysis & plotting utilities.
+"""
 from __future__ import annotations
+
+import json
+import warnings
 from pathlib import Path
 from typing import Dict, List
 
+import pandas as pd
 import torch
-import torch.nn.functional as F
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402 – after Agg backend set
+import matplotlib.pyplot as plt
 
-# ------------------------------------------------------------------
-#  Core metrics
-# ------------------------------------------------------------------
+from .preprocess import load_dataset, random_split
+from .train import (
+    GlobalCfg,
+    FrodoHyper,
+    GCN,
+    norm_factory,
+    train_one,
+    set_global_seeds,
+)
 
-def accuracy(logits: torch.Tensor, y: torch.Tensor) -> float:
-    """Simple top-1 accuracy."""
-    return float((logits.argmax(dim=-1) == y).float().mean())
+plt.switch_backend("Agg")  # allow plotting on head-less servers
 
+# -----------------------------------------------------------------------------
+#  EXPERIMENT 1 – depth scaling benchmark
+# -----------------------------------------------------------------------------
 
-def effective_rank(x: torch.Tensor) -> float:
-    """Full effective rank on CPU (or sampled) – safe against nans."""
-    x_ = x.detach().cpu()
-    # Low-rank SVD to keep memory low – fall back to full if tiny dims
-    q = min(128, max(1, x_.shape[1] - 1))
-    u, s, v = (
-        torch.linalg.svd(x_, full_matrices=False)
-        if q == 0
-        else torch.linalg.svd(x_[:, :q], full_matrices=False)
-    )
-    p = (s ** 2) / (s ** 2).sum()
-    er = torch.exp(-(p * torch.log(p + 1e-9)).sum()) / x_.shape[1]
-    return float(er)
+def experiment_depth(cfg: GlobalCfg, frodo_cfg: FrodoHyper):
+    """Run the depth-scaling benchmark (Exp-1) end-to-end."""
+    out_dir = Path("results"); out_dir.mkdir(exist_ok=True)
+    csv_path = out_dir / "exp1_depth.json"
+    fig_dir = Path("figures"); fig_dir.mkdir(exist_ok=True, parents=True)
 
+    rows: List[Dict] = []
+    for ds_name in cfg.datasets_e1:
+        try:
+            data = load_dataset(ds_name, cfg.data_root)
+        except Exception as e:  # pragma: no cover – defensive
+            warnings.warn(f"Failed to load dataset {ds_name}: {e}")
+            continue
 
-def group_distance_ratio(x: torch.Tensor, y: torch.Tensor) -> float:
-    """Average ratio of within-class to between-class feature distances.
+        for depth in cfg.depths_e1:
+            for variant in cfg.variants_e1:
+                for seed in cfg.seeds:
+                    set_global_seeds(seed)
+                    print(f"[Exp-1] dataset={ds_name} depth={depth} variant={variant} seed={seed}")
 
-    For a mini-batch of N nodes (N ≤ 2 048 in the current call-sites)
-    we compute the pair-wise Euclidean distance matrix ∈ R^{N×N} and
-    take the mean distance of node pairs that share the same label
-    (within-class) versus pairs of different labels (between-class).
+                    if ds_name != "ogbn-arxiv":
+                        split = random_split(data.num_nodes, seed)
+                    else:
+                        # ogbn splits pre-defined
+                        split = {
+                            "train": data.train_mask.nonzero(as_tuple=False).view(-1),
+                            "valid": data.val_mask.nonzero(as_tuple=False).view(-1),
+                            "test": data.test_mask.nonzero(as_tuple=False).view(-1),
+                        }
 
-    To keep memory usage predictable we operate on CPU and detach all
-    inputs from the computation graph – the metric is logging-only.
-    """
-    with torch.no_grad():
-        # Move to CPU to avoid GPU sync & make memory accounting easier
-        x_cpu = x.detach().cpu()
-        y_cpu = y.detach().cpu()
-        n = x_cpu.size(0)
+                    model = GCN(
+                        in_dim=data.num_features,
+                        hid=cfg.hidden,
+                        out_dim=int(data.y.max()) + 1,
+                        depth=depth,
+                        dropout=cfg.dropout,
+                        norm_factory=norm_factory(variant, cfg.hidden, frodo_cfg),
+                    )
 
-        # Pair-wise euclidean distances –  float32 (n≤2 048 ⇒ ≤16 MB)
-        diff = x_cpu.unsqueeze(0) - x_cpu.unsqueeze(1)  # (N, N, D)
-        dist = diff.pow(2).sum(-1).sqrt()  # (N, N)
+                    metrics = train_one(model, data, split, cfg)
+                    row = {"dataset": ds_name, "depth": depth, "variant": variant, "seed": seed, **metrics}
+                    rows.append(row)
 
-        # Masks for same / different labels
-        same_mask = y_cpu.unsqueeze(0) == y_cpu.unsqueeze(1)
-        same_mask.fill_diagonal_(False)  # ignore trivial zero-distance
-        diff_mask = ~same_mask
+                    # persist continuously – safer on long runs
+                    with open(csv_path, "w", encoding="utf-8") as fp:
+                        json.dump(rows, fp)
 
-        same_mean = dist[same_mask].mean()
-        diff_mean = dist[diff_mask].mean()
+    # ---------------- plots ----------------
+    if not rows:
+        print("[WARN] No results to plot – exiting experiment_depth early.")
+        return
 
-        ratio = (same_mean - diff_mean).abs() / (
-            same_mean.abs() + diff_mean.abs() + 1e-9
-        )
-        return float(ratio)
+    df = pd.DataFrame(rows)
+    for metric, fname in [
+        ("test_acc", "accuracy_vs_depth.pdf"),
+        ("ER", "er_vs_depth.pdf"),
+        ("GDR", "gdr_vs_depth.pdf"),
+    ]:
+        for ds_name in cfg.datasets_e1:
+            plt.figure()
+            for variant in cfg.variants_e1:
+                means: List[float] = []
+                for depth in cfg.depths_e1:
+                    m = df[(df.dataset == ds_name) & (df.depth == depth) & (df.variant == variant)][metric].mean()
+                    means.append(m)
+                plt.plot(cfg.depths_e1, means, marker="o", label=variant)
+                for d, m in zip(cfg.depths_e1, means):
+                    plt.text(d, m, f"{m:.2f}")
+            plt.xlabel("Depth")
+            plt.ylabel(metric)
+            plt.title(f"{metric} – {ds_name}")
+            plt.legend()
+            plt.tight_layout()
+            path = fig_dir / fname.replace(".pdf", f"_{ds_name}.pdf")
+            plt.savefig(path, format="pdf", bbox_inches="tight")
+            plt.close()
+            print(f"Saved figure → {path}")
 
-# ------------------------------------------------------------------
-#  Figure helper
-# ------------------------------------------------------------------
-
-# Enforce the updated output directory (see task instructions)
-_SAVE_DIR = Path(".research/iteration6/images")
-
-
-def save_lineplot(
-    xs, ys: Dict[str, List[float]], xlabel: str, ylabel: str, title: str, fname: str
-):
-    """Persist a simple line-plot to the mandated output directory."""
-    plt.figure()
-    for label, y_vals in ys.items():
-        plt.plot(xs, y_vals, marker="o", label=label)
-        for xi, yi in zip(xs, y_vals):
-            plt.text(xi, yi, f"{yi:.2f}")
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.title(title)
-    plt.legend()
-    plt.tight_layout()
-
-    _SAVE_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = _SAVE_DIR / fname
-    plt.savefig(out_path, format="pdf", bbox_inches="tight")
-    plt.close()
-    print(f"Saved figure → {out_path}")
+    # ---------------- console summary ----------------
+    print("\nExperiment description: Depth-scaling benchmark (Exp-1) – real training "
+          "on Pubmed, Chameleon and ogbn-arxiv with variants {vanilla, pairnorm, "
+          "contranorm, ndls, dropedge, frodo} across depths {2,16,64,128} repeated "
+          "for 10 seeds.")
+    print("Numerical results (first 5 rows):")
+    print(df.head())
+    print("Figures stored in ./figures/*_vs_depth_*.pdf")

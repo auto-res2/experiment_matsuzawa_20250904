@@ -1,67 +1,138 @@
-"""src/train.py
-Model architectures, normalisation layers, and the generic training
-loop that is re-used by all experiments.
+"""
+train.py – model architectures, training loop and utility functions.
 """
 from __future__ import annotations
+
+import random
 import time
-from typing import Callable, Dict, Any, Tuple
+import warnings
+from dataclasses import dataclass, field
+from typing import Callable, Dict, List
 
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn, optim
-from torch_geometric.nn import GCNConv, GATConv, APPNP
-from torch_geometric.data import Data
-from torch_geometric.utils import to_undirected
+from torch_geometric.nn import GCNConv
 
-# ------------------------------------------------------------------
-#  Utility – reproducibility
-# ------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+#  Safety-check – we insist on running with a visible CUDA device.
+# -----------------------------------------------------------------------------
+if not torch.cuda.is_available():
+    raise RuntimeError("CUDA device not visible – experiments require a GPU.")
+
+# -----------------------------------------------------------------------------
+#  Reproducibility helper
+# -----------------------------------------------------------------------------
 
 def set_global_seeds(seed: int):
-    """Fix every random generator we can reasonably access."""
-    import random, os
+    """Fix Python / NumPy / PyTorch RNG state for reproducibility."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    # CuDNN
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    # Python / hash randomness (important for some dataloader shuffles)
-    os.environ["PYTHONHASHSEED"] = str(seed)
 
-# ------------------------------------------------------------------
-#  Mix-prop helper (ĀH) – custom autograd to be memory-light
-# ------------------------------------------------------------------
-class _MixProp(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, x: torch.Tensor, edge_index: torch.Tensor, num_nodes: int):
-        row, col = edge_index
-        deg = torch.bincount(row, minlength=num_nodes).float().clamp_(min=1)
-        out = torch.zeros_like(x)
-        out.index_add_(0, row, x[col])
-        out = out / deg.unsqueeze(1)
-        ctx.save_for_backward(edge_index, deg)
-        return out
+# -----------------------------------------------------------------------------
+#  Configuration dataclasses (filled by src.main after reading YAML)
+# -----------------------------------------------------------------------------
 
-    @staticmethod
-    def backward(ctx, grad_out):
-        edge_index, deg = ctx.saved_tensors
-        row, col = edge_index
-        grad_x = torch.zeros_like(grad_out)
-        grad_x.index_add_(0, col, grad_out[row] / deg[row].unsqueeze(1))
-        return grad_x, None, None
+@dataclass
+class GlobalCfg:
+    device: str = "cuda:0"
+    data_root: str = "data"
+    hidden: int = 128
+    dropout: float = 0.5
+    patience: int = 50
+    lr_grid: List[float] = field(default_factory=lambda: [0.005, 0.01, 0.02])
+    wd_grid: List[float] = field(default_factory=lambda: [0.0, 1e-4, 5e-4])
+    seeds: List[int] = field(default_factory=lambda: list(range(10)))
+    datasets_e1: List[str] = field(default_factory=list)
+    depths_e1: List[int] = field(default_factory=list)
+    variants_e1: List[str] = field(default_factory=list)
 
-def propagate_mean(x: torch.Tensor, edge_index: torch.Tensor):
-    return _MixProp.apply(x, edge_index, x.size(0))
 
-# ------------------------------------------------------------------
-#  FRODO-Norm layer
-# ------------------------------------------------------------------
+@dataclass
+class FrodoHyper:
+    gamma: float = 5.0
+    sigma: float = 0.1
+    k: float = 0.15
+    tau_m: float = 0.02
+    tau_r: float = 0.35
+
+# -----------------------------------------------------------------------------
+#  Evaluation metrics  (kept here to avoid circular imports with evaluate.py)
+# -----------------------------------------------------------------------------
+
+def accuracy(logits: torch.Tensor, y: torch.Tensor) -> float:
+    return float((logits.argmax(-1) == y).float().mean())
+
+
+def effective_rank(x: torch.Tensor) -> float:
+    if x.size(0) > 4096:  # memory-safety sampling
+        idx = torch.randperm(x.size(0), device=x.device)[:4096]
+        x = x[idx]
+    with torch.no_grad():
+        s = torch.linalg.svdvals(x.cpu())
+        p = (s ** 2) / (s ** 2).sum()
+        er = torch.exp(-(p * torch.log(p + 1e-9)).sum())
+        return float(er / x.size(1))
+
+
+def group_distance_ratio(x: torch.Tensor, y: torch.Tensor) -> float:
+    if x.size(0) > 2048:
+        idx = torch.randperm(x.size(0), device=x.device)[:2048]
+        x, y = x[idx].cpu(), y[idx].cpu()
+    with torch.no_grad():
+        dists = torch.cdist(x, x, p=2)
+        same = y.unsqueeze(0) == y.unsqueeze(1)
+        same.fill_diagonal_(False)
+        diff = ~same
+        return float((dists[same].mean() - dists[diff].mean()).abs() /
+                     (dists[same].mean() + dists[diff].mean() + 1e-9))
+
+
+def instance_information_gain(z_in: torch.Tensor, z_out: torch.Tensor) -> float:
+    p = F.softmax(z_in, dim=-1)
+    q = F.softmax(z_out, dim=-1)
+    kl = F.kl_div(q.log(), p, reduction="batchmean")
+    return float(kl)
+
+# -----------------------------------------------------------------------------
+#  Normalisation layers
+# -----------------------------------------------------------------------------
+
+class PairNorm(nn.Module):
+    """PairNorm – PN-scale variant."""
+    def forward(self, x: torch.Tensor, *_):  # type: ignore[override]
+        mean = x.mean(dim=0, keepdim=True)
+        x = x - mean
+        norm = x.pow(2).sum(dim=1, keepdim=True).mean().sqrt()
+        return x / (norm + 1e-6)
+
+
+class IdentityNorm(nn.Module):
+    def forward(self, x: torch.Tensor, *_):  # type: ignore[override]
+        return x
+
+
+# Hutchinson-trace helper ----------------------------------------------------------------
+@torch.no_grad()
+def _hutchinson_erank(x: torch.Tensor, iters: int = 8) -> torch.Tensor:
+    n, d = x.shape
+    v = torch.randn(n, 1, device=x.device)
+    for _ in range(iters):
+        v = x @ (x.T @ v) / d
+    s = torch.linalg.svdvals(x)[:min(d, 64)]
+    p = (s ** 2) / (s ** 2).sum()
+    er = torch.exp(-(p * torch.log(p + 1e-9)).sum())
+    return er / d
+
+
 class FRODONorm(nn.Module):
-    """Frequency-aware Regulators Of Dimensional- and Over-smoothing."""
-    def __init__(self, dim: int, hyper):
+    """Implementation of FRODO-Norm layer."""
+    def __init__(self, dim: int, hyper: FrodoHyper):
         super().__init__()
         self.g = hyper.gamma
         self.sigma = hyper.sigma
@@ -69,63 +140,53 @@ class FRODONorm(nn.Module):
         self.tau_m = hyper.tau_m
         self.tau_r = hyper.tau_r
         self.register_buffer("running_r", torch.tensor(1.0))
+        self.loss_contrastive = torch.tensor(0.0)
 
-    # ------------------------------------------------------------------
-    #  Helper – Hutchinson effective rank estimate
-    # ------------------------------------------------------------------
-    def _hutchinson_erank(self, x: torch.Tensor, iters: int = 8):
-        d = x.size(1)
-        sketch = torch.randn(x.size(0), 1, device=x.device)
-        for _ in range(iters):
-            sketch = x @ (x.t() @ sketch) / d
-        trace = (sketch * x).sum()  # noqa: F841 – kept for completeness
-        s = torch.linalg.svdvals(x) ** 2
-        shares = s / (s.sum() + 1e-9)
-        erank = torch.exp(-(shares * torch.log(shares + 1e-9)).sum())
-        return erank / d
+    def forward(self, x: torch.Tensor, edge_index: torch.Tensor):  # type: ignore[override]
+        row, col = edge_index
+        deg = torch.bincount(row, minlength=x.size(0)).clamp(min=1).float().to(x.device)
+        Px = torch.zeros_like(x)
+        Px.index_add_(0, row, x[col])
+        Px = Px / deg.unsqueeze(1)
 
-    # ------------------------------------------------------------------
-    def forward(self, x: torch.Tensor, edge_index: torch.Tensor):  # pylint: disable=arguments-differ
-        with torch.no_grad():
-            Px = propagate_mean(x, edge_index)
-            M = (Px - x).norm(dim=1, keepdim=True)  # mix-index
-            idx = torch.randint(0, x.size(0), (min(2048, x.size(0)),), device=x.device)
-            R_est = self._hutchinson_erank(x[idx])
-            self.running_r = 0.95 * self.running_r + 0.05 * R_est.detach()
+        M = (Px - x).norm(dim=1, keepdim=True)
+        sample = torch.randperm(x.size(0), device=x.device)[:2048]
+        R = _hutchinson_erank(x[sample])
+        self.running_r.mul_(0.95).add_(0.05 * R)
+
         alpha = torch.sigmoid(self.g * (M.mean() - M))
-        condition = (M < self.tau_m) | (self.running_r < self.tau_r)
-        x = torch.where(condition, x + alpha * (x - Px), x)
+        cond = (M < self.tau_m) | (self.running_r < self.tau_r)
+        x = torch.where(cond, x + alpha * (x - Px), x)
 
-        # contrastive perturbation (only 5 % of nodes)
-        if self.training:
-            num = max(1, int(0.05 * x.size(0)))
-            perm = torch.randperm(x.size(0), device=x.device)[:num]
-            noise = torch.randn_like(x[perm]) * self.sigma
-            cos = 1 - F.cosine_similarity(x[perm], x[perm] + noise).mean()
-            if not hasattr(self, "extra_losses"):
-                self.extra_losses = []
-            self.extra_losses.append(cos)
+        if self.training and self.sigma > 0:
+            m = max(1, int(0.05 * x.size(0)))
+            idx = torch.randperm(x.size(0), device=x.device)[:m]
+            noise = torch.randn_like(x[idx]) * self.sigma
+            self.loss_contrastive = 1 - F.cosine_similarity(x[idx], x[idx] + noise).mean()
+        else:
+            self.loss_contrastive = torch.tensor(0.0, device=x.device)
         return x
 
-# ------------------------------------------------------------------
-#  Back-bone GNNs (GCN / GAT / APPNP)
-# ------------------------------------------------------------------
-class GCNNet(nn.Module):
-    def __init__(self, in_dim: int, hid_dim: int, out_dim: int, depth: int,
-                 dropout: float, norm_factory: Callable[[], nn.Module]):
+# -----------------------------------------------------------------------------
+#  GCN backbone
+# -----------------------------------------------------------------------------
+
+class GCN(nn.Module):
+    def __init__(self, in_dim: int, hid: int, out_dim: int, depth: int, dropout: float,
+                 norm_factory: Callable[[], nn.Module]):
         super().__init__()
         self.depth = depth
         self.convs = nn.ModuleList()
         self.norms = nn.ModuleList()
-        self.dropout = dropout
         for i in range(depth):
-            in_c = in_dim if i == 0 else hid_dim
-            out_c = out_dim if i == depth - 1 else hid_dim
-            self.convs.append(GCNConv(in_c, out_c, add_self_loops=False, cached=False))
+            inp = in_dim if i == 0 else hid
+            outp = out_dim if i == depth - 1 else hid
+            self.convs.append(GCNConv(inp, outp, add_self_loops=False, cached=False, normalize=True))
             if i < depth - 1:
                 self.norms.append(norm_factory())
+        self.dropout = dropout
 
-    def forward(self, x: torch.Tensor, edge_index: torch.Tensor):  # pylint: disable=arguments-differ
+    def forward(self, x, edge_index):  # type: ignore[override]
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
             if i < self.depth - 1:
@@ -135,136 +196,74 @@ class GCNNet(nn.Module):
                 x = F.dropout(x, p=self.dropout, training=self.training)
         return x
 
-class GATNet(nn.Module):
-    def __init__(self, in_dim: int, hid_dim: int, out_dim: int, depth: int,
-                 heads: int, dropout: float, norm_factory: Callable[[], nn.Module]):
-        super().__init__()
-        self.convs, self.norms = nn.ModuleList(), nn.ModuleList()
-        for i in range(depth):
-            in_c = in_dim if i == 0 else hid_dim * heads
-            out_c = out_dim if i == depth - 1 else hid_dim
-            num_heads = 1 if i == depth - 1 else heads
-            self.convs.append(GATConv(in_c, out_c, heads=num_heads, add_self_loops=False, dropout=dropout))
-            if i < depth - 1:
-                self.norms.append(norm_factory())
-        self.dropout = dropout
+# -----------------------------------------------------------------------------
+#  Variant → normalisation layer factory helper
+# -----------------------------------------------------------------------------
 
-    def forward(self, x: torch.Tensor, edge_index: torch.Tensor):  # pylint: disable=arguments-differ
-        for i, conv in enumerate(self.convs):
-            x = conv(x, edge_index)
-            if i < len(self.convs) - 1:
-                norm = self.norms[i]
-                x = norm(x, edge_index) if isinstance(norm, FRODONorm) else norm(x)
-                x = F.relu(x)
-                x = F.dropout(x, p=self.dropout, training=self.training)
-        return x
-
-class APPNPNet(nn.Module):
-    def __init__(self, in_dim: int, hid_dim: int, out_dim: int, depth: int,
-                 K: int, dropout: float, norm_factory: Callable[[], nn.Module]):
-        super().__init__()
-        self.lins, self.norms = nn.ModuleList(), nn.ModuleList()
-        for i in range(depth):
-            in_c = in_dim if i == 0 else hid_dim
-            out_c = out_dim if i == depth - 1 else hid_dim
-            self.lins.append(nn.Linear(in_c, out_c))
-            if i < depth - 1:
-                self.norms.append(norm_factory())
-        self.propagate = APPNP(K, alpha=0.1)
-        self.dropout = dropout
-
-    def forward(self, x: torch.Tensor, edge_index: torch.Tensor):  # pylint: disable=arguments-differ
-        for i, lin in enumerate(self.lins):
-            x = lin(x)
-            if i < len(self.lins) - 1:
-                norm = self.norms[i]
-                x = norm(x, edge_index) if isinstance(norm, FRODONorm) else norm(x)
-                x = F.relu(x)
-                x = F.dropout(x, p=self.dropout, training=self.training)
-        return self.propagate(x, edge_index)
-
-# ------------------------------------------------------------------
-#  Factory for normalisation layer (variant is a string flag)
-# ------------------------------------------------------------------
-
-def norm_factory(variant: str, dim: int, frodo_hyper):
+def norm_factory(variant: str, dim: int, frodo_hyper: FrodoHyper) -> Callable[[], nn.Module]:
+    variant = variant.lower()
     if variant == "frodo":
         return lambda: FRODONorm(dim, frodo_hyper)
     if variant == "pairnorm":
-        from pairnorm import PairNorm   # type: ignore
-        return lambda: PairNorm("PN")
-    if variant == "contranorm":
-        from contranorm import ContraNorm  # type: ignore
-        return lambda: ContraNorm(dim)
-    if variant == "dgn":
-        from dgn import DGN  # type: ignore
-        return lambda: DGN(dim, groups=16)
-    # vanilla / dropedge / ndls fall back to Identity
-    return lambda: nn.Identity()
+        return lambda: PairNorm()
+    if variant in {"vanilla", "dropedge"}:
+        return lambda: IdentityNorm()
+    warnings.warn(f"Variant {variant} not fully implemented; defaulting to IdentityNorm().")
+    return lambda: IdentityNorm()
 
-# ------------------------------------------------------------------
-#  Training routine  (shared by all experiments)
-# ------------------------------------------------------------------
-from .evaluate import accuracy, effective_rank, group_distance_ratio  # noqa: E402 – circular-safe
+# -----------------------------------------------------------------------------
+#  Full-batch training routine
+# -----------------------------------------------------------------------------
 
-def run_training(model: nn.Module, data: Data, split_idx: Dict[str, torch.Tensor],
-                 cfg, exp_name: str) -> Tuple[float, Dict[str, Any]]:
-    """Generic full-batch training with early stopping."""
+def train_one(model: nn.Module, data, split: Dict[str, torch.Tensor], cfg: GlobalCfg):
     device = torch.device(cfg.device)
     model = model.to(device)
-    x, y = data.x.to(device), data.y.view(-1).to(device)
-    edge_index = data.edge_index.to(device)
+    x, y, edge_index = data.x.to(device), data.y.to(device), data.edge_index.to(device)
+    train_idx, val_idx, test_idx = split["train"].to(device), split["valid"].to(device), split["test"].to(device)
 
-    train_idx = split_idx["train"].to(device)
-    val_idx = split_idx["valid"].to(device)
-    test_idx = split_idx["test"].to(device)
-
-    optimiser = optim.Adam(model.parameters(), lr=cfg.lr_grid[1], weight_decay=cfg.wd_grid[2])
-    best_val, wait, best_state, start = -1.0, 0, None, time.time()
+    opt = optim.Adam(model.parameters(), lr=cfg.lr_grid[1], weight_decay=cfg.wd_grid[2])
+    best_val, best_state, patience = -1.0, None, 0
+    tic = time.time()
 
     for epoch in range(1, 10000):
         model.train()
-        optimiser.zero_grad(set_to_none=True)
+        opt.zero_grad(set_to_none=True)
         out = model(x, edge_index)
-        loss_main = F.nll_loss(F.log_softmax(out[train_idx], dim=-1), y[train_idx])
-        extra = 0.0
-        for m in model.modules():
-            if hasattr(m, "extra_losses") and m.extra_losses:
-                extra += sum(m.extra_losses)
-                m.extra_losses.clear()
-        loss = loss_main + extra
+        loss = F.cross_entropy(out[train_idx], y[train_idx])
+        #  add contrastive term if provided by FRODO layers
+        c_loss = sum(getattr(m, "loss_contrastive", 0.0) for m in model.modules())
+        loss = loss + c_loss
         loss.backward()
-        optimiser.step()
+        opt.step()
 
-        # validation
+        # ---------------- validation ----------------
         model.eval()
         with torch.no_grad():
             logits = model(x, edge_index)
-            val_acc = accuracy(logits[val_idx], y[val_idx])
+        val_acc = accuracy(logits[val_idx], y[val_idx])
         if val_acc > best_val:
             best_val = val_acc
             best_state = {k: v.clone() for k, v in model.state_dict().items()}
-            wait = 0
+            patience = 0
         else:
-            wait += 1
-        if wait >= cfg.patience:
+            patience += 1
+        if patience >= cfg.patience:
             break
 
-    train_time = (time.time() - start) / max(epoch, 1)
-    if best_state is not None:
+    train_time = (time.time() - tic) / epoch
+    if best_state:
         model.load_state_dict(best_state)
+
     model.eval()
     with torch.no_grad():
         logits = model(x, edge_index)
-    test_acc = accuracy(logits[test_idx], y[test_idx])
 
     metrics = {
-        "val_acc": best_val,
-        "test_acc": test_acc,
-        "train_sec_per_epoch": train_time,
+        "test_acc": accuracy(logits[test_idx], y[test_idx]),
+        "val_best": best_val,
         "epochs": epoch,
-        "ER": effective_rank(logits.detach()[:2048]),
-        "GDR": group_distance_ratio(logits.detach()[:2048], y[:2048]),
+        "sec_per_ep": train_time,
+        "ER": effective_rank(logits),
+        "GDR": group_distance_ratio(logits, y),
     }
-    print({"experiment": exp_name, **metrics})
-    return test_acc, metrics
+    return metrics
