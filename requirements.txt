@@ -5,8 +5,10 @@ requests>=2.31
 diffusers==0.27.2
 transformers==4.40.2
 timm==0.9.12
-xformers==0.0.25
-albumentations==1.4.5
+# xformers 0.0.25 requires torch>=2.1; the project is pinned to torch<2.0, so we omit
+# xformers==0.0.25
+# albumentations 1.4.5 is not available for manylinux / Python 3.11; use the newest 1.4.x that is available.
+albumentations>=1.4.8,<1.5.0
 matplotlib>=3.8
 seaborn>=0.13
 numpy<2
