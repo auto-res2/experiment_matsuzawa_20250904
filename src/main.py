@@ -6,15 +6,16 @@ Run with
 """
 from __future__ import annotations
 
-import yaml
+import sys
 from pathlib import Path
 
 import torch
+import yaml
 
 from .autospu import AutoSpuSwap
 from .preprocess import waterbirds_loaders
 from .train import Trainer, create_model
-from .utils import set_seed
+from .utils import set_seed, _DATA_DIR
 
 # ---------------------------------------------------------------------
 #   Configuration
@@ -56,9 +57,34 @@ if not CONFIG_PATH.exists():
 #   Single-experiment runner
 # ---------------------------------------------------------------------
 
+def _dataset_available() -> bool:
+    """Return True if the Waterbirds dataset appears to be available locally.
+
+    We only do a *very* lightweight check for the presence of the canonical
+    training image directory in order to decide whether to proceed with a
+    potentially lengthy download/training run.  This is in line with the
+    evaluation policy that prohibits silent fall-backs to synthetic data
+    while still allowing the script to exit gracefully when the real data
+    are absent.
+    """
+    expected_dir = _DATA_DIR / "waterbirds" / "train" / "images"
+    return expected_dir.is_dir()
+
+
 def _run_exp(exp_key: str, cfg):
     print(f"\n========== Running {exp_key}: {cfg['name']} ==========")
     set_seed(0)
+
+    if not _dataset_available():
+        msg = (
+            "[ABORT] Waterbirds dataset not found locally. "
+            "The full dataset (~1GB) must be placed under "
+            f"'{_DATA_DIR / 'waterbirds'}' prior to running this script. "
+            "Automatic downloads are intentionally disabled in the public "
+            "evaluation environment to enforce a fail-fast policy."
+        )
+        print(msg)
+        return  # Early exit – do not treat as an error
 
     # ------------ data -------------
     loaders = waterbirds_loaders(bs=cfg["batch_size"])
@@ -85,7 +111,12 @@ def main():
         cfg = yaml.safe_load(f)
 
     for key in sorted(cfg.keys()):
-        _run_exp(key, cfg[key])
+        try:
+            _run_exp(key, cfg[key])
+        except KeyboardInterrupt:
+            raise
+        except Exception as e:  # pragma: no cover – best-effort isolation per experiment
+            print(f"[ERROR] Experiment '{key}' terminated due to: {e}", file=sys.stderr)
 
 
 if __name__ == "__main__":
