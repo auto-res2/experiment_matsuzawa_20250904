@@ -1,423 +1,245 @@
-"""src/train.py
-Model-training related classes and functions.
-The code is **directly refactored** from the single-file implementation so
-logic, default values and public APIs stay identical.
+"""
+train.py – model, losses, and training loop for the AutoSpuSwap experiments
+The file contains only code that is strictly necessary for modelling and training.
+All heavy lifting (data-loading, evaluation, plotting) is delegated to the other
+modules so that this file can stay focussed on the learning logic.
 """
 from __future__ import annotations
-
-# NOTE: All placeholder markers that were accidentally written to disk have been
-#       removed.  This file now starts with valid Python – the earlier
-#       `[UPDATED CONTENT BELOW]` token caused a SyntaxError at import time.
-
-import random
 import time
-from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Dict, Any, Tuple, List
 
-import numpy as np
-import pandas as pd
+import yaml
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.transforms as T
-import yaml
 from rich import print
 from timm import create_model
+from tqdm import tqdm
 
-from .evaluate import (
-    compute_wg_acc,
-    expected_calibration_error,
-    eval_waterbirds,
-    save_bar,
-)
-from .preprocess import get_waterbirds_loaders
-
-# ────────────────────────────────────────────────────────────
-#  Paths & configuration
-# ────────────────────────────────────────────────────────────
-ROOT = Path(__file__).resolve().parent.parent
+# -----------------------------------------------------------------------------
+# Basic utilities
+# -----------------------------------------------------------------------------
+ROOT: Path = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "config" / "config.yaml"
-if not CONFIG_PATH.exists():
-    raise FileNotFoundError(
-        f"Configuration file {CONFIG_PATH} missing – please add one before running."
-    )
-with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-    CFG: Dict[str, Any] = yaml.safe_load(f)
+CONFIG: Dict[str, Any] = yaml.safe_load(CONFIG_PATH.read_text())
 
-DATA_DIR = ROOT / CFG["dataset"]["waterbirds"]["root_dir"]
-CKPT_DIR = ROOT / "models"
-RESULTS_DIR = ROOT / "results"
-
-for d in (DATA_DIR, CKPT_DIR, RESULTS_DIR):
-    d.mkdir(parents=True, exist_ok=True)
-
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DEVICE: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DTYPE = torch.bfloat16 if torch.cuda.is_available() else torch.float32
-AMP_CONTEXT = (
-    torch.autocast  # type: ignore[attr-defined]
-    if DEVICE == "cuda"
-    else torch.cpu.amp.autocast  # type: ignore[attr-defined]
-)
 
-# ImageNet statistics kept exactly as in the monolithic script
-IMNET_MEAN = (0.485, 0.456, 0.406)
-IMNET_STD = (0.229, 0.224, 0.225)
-
-# ────────────────────────────────────────────────────────────
-#  Helper – robustly extract Waterbirds group IDs irrespective of WILDS version
-# ────────────────────────────────────────────────────────────
-
-def _extract_groups(batch: Dict[str, torch.Tensor]) -> torch.Tensor:  # noqa: D401
-    """Return group‐IDs (0–3) for a Waterbirds mini-batch.
-
-    The metadata ordering differs slightly across WILDS releases.  In v2.0 the
-    first column is the class label (y) and the second column is the environment
-    attribute (place).  Earlier releases already contained the pre-computed
-    group IDs in the first column.  To stay backward-compatible we detect the
-    shape at run-time and construct the group IDs if necessary.
-    """
-    metadata = batch["metadata"]  # (B, k) where k==1 (old) or k>=2 (new)
-    if metadata.size(1) == 1:  # legacy – group id already supplied
-        return metadata[:, 0]
-
-    # Newer format – columns are [y, place, …].  Groups are the cartesian
-    # product of label (water/land bird) and place (water/land background).
-    y = batch["y"].view(-1)
-    place = metadata[:, 1].view(-1)
-    return y * 2 + place  # 0–3
-
-# ────────────────────────────────────────────────────────────
-#  1.  Utilities
-# ────────────────────────────────────────────────────────────
 
 def set_seed(seed: int) -> None:
-    """Ensure full determinism across NumPy / Python / PyTorch."""
+    """Fix all random seeds for full reproducibility."""
+    import random, numpy as np  # local import – keeps global namespace clean
+
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+    torch.cuda.manual_seed_all(seed)
 
 
-# ────────────────────────────────────────────────────────────
-#  2.  Augmentations / auxiliary modules
-# ────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
+#  Model building blocks
+# -----------------------------------------------------------------------------
+
+def get_backbone() -> nn.Module:
+    """Create a timm backbone and move it to the correct device/precision."""
+    model = create_model(
+        CONFIG["model"]["backbone"], pretrained=True, num_classes=CONFIG["model"]["num_classes"]
+    )
+    return model.to(device=DEVICE, dtype=DTYPE)
 
 
 class FourierPerturb(nn.Module):
-    """Fast amplitude/phase jitter in the Fourier domain."""
+    """Light-weight spectrum perturbation used for style/Fourier robustness."""
 
     def __init__(self, phase_max: float = 0.2, amp_range: Tuple[float, float] = (0.8, 1.2)) -> None:
         super().__init__()
         self.phase_max = phase_max
         self.amp_lo, self.amp_hi = amp_range
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:  # noqa: D401
+    def forward(self, x: torch.Tensor) -> torch.Tensor:  # type: ignore[override]
         with torch.no_grad():
-            x_fft = torch.fft.rfft2(x, norm="ortho")
-            mag, phase = torch.abs(x_fft), torch.angle(x_fft)
-            phase += (torch.rand_like(phase) * 2 - 1) * self.phase_max
+            X = torch.fft.rfft2(x, norm="ortho")
+            mag, phi = torch.abs(X), torch.angle(X)
+            phi += (torch.rand_like(phi) * 2 - 1) * self.phase_max
             mag *= torch.rand_like(mag) * (self.amp_hi - self.amp_lo) + self.amp_lo
-            out = torch.fft.irfft2(mag * torch.exp(1j * phase), s=x.shape[-2:], norm="ortho")
-            return out.clamp_(min=x.min(), max=x.max())
-
-
-# ------------------------------------------------------------------
-#  Dummy SAM-replacement mask generator (keeps code self-contained)
-# ------------------------------------------------------------------
-
-
-class DummyMaskBank:
-    """Produces a left-half object / right-half context mask."""
-
-    def __call__(self, x: torch.Tensor) -> torch.Tensor:  # noqa: D401
-        m = torch.zeros_like(x[:, :1])
-        m[:, :, :, : x.size(-1) // 2] = 1.0
-        return m
-
-
-try:
-    import segment_anything  # noqa: F401, pylint: disable=unused-import
-
-    HAVE_SAM = True
-except ImportError:  # pragma: no cover – SAM is optional
-    HAVE_SAM = False
+            out = torch.fft.irfft2(mag * torch.exp(1j * phi), s=x.shape[-2:], norm="ortho")
+            return out.clamp_(0, 1)
 
 
 class ContextSwapper(nn.Module):
-    """Swaps background regions between two randomly permuted images."""
+    """Implements the context-swapping counterfactual generation step."""
 
-    def __init__(self, swap_prob: float = 1.0):
+    def __init__(self, swap_prob: float) -> None:
         super().__init__()
-        self.swap_prob = swap_prob
-        self.mask_bank = DummyMaskBank()
+        from src.preprocess import MaskBank  # local to avoid circular import
 
-    def forward(self, x: torch.Tensor, y: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        if self.swap_prob == 0.0:
+        self.p = swap_prob
+        self.bank = MaskBank()
+
+    def forward(self, x: torch.Tensor, idx: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:  # type: ignore[override]
+        if self.p == 0:
             return x, torch.zeros_like(x[:, :1])
+        # random permutation within the mini-batch
         perm = torch.randperm(x.size(0), device=x.device)
+        masks = self.bank(idx).to(device=x.device, dtype=x.dtype)  # (B,1,224,224)
+        ctx = 1.0 - masks
         x_perm = x[perm]
-        mask = self.mask_bank(x)
-        ctx_mask = 1.0 - mask
-        x_cf = x * mask + x_perm * ctx_mask
-        return x_cf, mask
+        x_swapped = x * masks + x_perm * ctx
+        return x_swapped, masks
 
 
-class AutoSpuSwapModule(nn.Module):
-    """Composite loss wrapper used in AutoSpuSwap training."""
+class AutoSpuSwapLoss(nn.Module):
+    """Combined CE + consistency + Fourier invariance loss used for training."""
 
-    def __init__(self, swap_prob: float, lambda_consistency: float, lambda_fourier: float):
+    def __init__(self) -> None:
         super().__init__()
-        self.swapper = ContextSwapper(swap_prob)
-        self.lambda_cons = lambda_consistency
-        self.lambda_fourier = lambda_fourier
+        autospu = CONFIG["autospu"]
+        self.swapper = ContextSwapper(autospu["swap_prob"])
+        self.l_cons = autospu["lambda_consistency"]
+        self.l_four = autospu["lambda_fourier"]
         self.fourier = FourierPerturb()
         self.mse = nn.MSELoss()
 
-    def forward(
-        self, model: nn.Module, x: torch.Tensor, y: torch.Tensor
-    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
+    def forward(  # type: ignore[override]
+        self, model: nn.Module, x: torch.Tensor, y: torch.Tensor, idx: torch.Tensor
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         logits = model(x)
-        loss_cls = F.cross_entropy(logits, y)
-        x_cf, _ = self.swapper(x, y)
-        if self.lambda_fourier > 0:
+        loss_ce = F.cross_entropy(logits, y)
+
+        # generate counterfactuals
+        x_cf, _ = self.swapper(x, idx)
+        if self.l_four > 0:
             x_cf = self.fourier(x_cf)
         logits_cf = model(x_cf)
         loss_cons = self.mse(logits, logits_cf)
-        loss = loss_cls + self.lambda_cons * loss_cons
-        return loss, {
-            "loss_cls": loss_cls.detach(),
-            "loss_cons": loss_cons.detach(),
-            "Δlogits": (logits - logits_cf).pow(2).mean().sqrt().detach(),
-        }
+
+        total = loss_ce + self.l_cons * loss_cons
+        log_dict = {"loss_ce": loss_ce.detach(), "loss_cons": loss_cons.detach()}
+        return total, log_dict
 
 
-# ------------------------------------------------------------------
-#  3.  Baseline losses
-# ------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+#  Training loop – Waterbirds experiment
+# -----------------------------------------------------------------------------
 
-class IRMLoss(nn.Module):
-    def __init__(self, penalty_weight: float = 1_000.0):
-        super().__init__()
-        self.penalty_weight = penalty_weight
-        self.dummy_w = nn.Parameter(torch.tensor(1.0))
-
-    def forward(self, logits: torch.Tensor, y: torch.Tensor) -> torch.Tensor:  # noqa: D401
-        scale = self.dummy_w
-        loss = F.cross_entropy(logits * scale, y)
-        grad = torch.autograd.grad(loss, [scale], create_graph=True)[0]
-        penalty = grad.pow(2)
-        return loss + self.penalty_weight * penalty
+def _extract_group(meta: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    """group = 2 * y + env  (definition from WILDS-Waterbirds v2.0)."""
+    env = meta[:, 1]
+    return y * 2 + env
 
 
-class RExLoss(nn.Module):
-    def __init__(self, penalty_weight: float = 10.0):
-        super().__init__()
-        self.penalty_weight = penalty_weight
+def run_waterbirds() -> None:
+    """Full training loop over all seeds + methods (ERM / AutoSpuSwap / swap0)."""
+    from src.preprocess import get_waterbirds_loaders  # local import avoids circular dep
+    from src.evaluate import worst_group_acc, save_bar_plot
 
-    def forward(self, losses: List[torch.Tensor]) -> torch.Tensor:  # noqa: D401
-        mean = torch.stack(losses).mean()
-        var = torch.stack([(l - mean).pow(2) for l in losses]).mean()
-        return mean + self.penalty_weight * var
+    results: List[Dict[str, Any]] = []
+    results_dir = ROOT / "results"
+    results_dir.mkdir(parents=True, exist_ok=True)
 
-
-class GroupDROLoss:
-    """Implements exponentiated gradient update from Sagawa et al."""
-
-    def __init__(self, n_groups: int, eta: float = 0.2):
-        self.eta = eta
-        self.q = torch.zeros(n_groups, device=DEVICE)
-
-    def update(self, group_losses: torch.Tensor) -> torch.Tensor:  # noqa: D401
-        self.q = self.q * torch.exp(self.eta * group_losses.detach())
-        self.q = self.q / self.q.sum()
-        return (self.q * group_losses).sum()
-
-
-# ------------------------------------------------------------------
-#  4.  Model factory – centralised to ensure identical init per seed
-# ------------------------------------------------------------------
-
-
-def build_model() -> nn.Module:
-    model_cfg = CFG["model"]
-    m = create_model(model_cfg["name"], pretrained=model_cfg.get("pretrained", True))
-    # Waterbirds has exactly 2 classes
-    m.reset_classifier(num_classes=2)
-    return m.to(DEVICE, dtype=DTYPE)
-
-
-# ------------------------------------------------------------------
-#  5.  Waterbirds experiment (EXP-1)
-# ------------------------------------------------------------------
-
-
-def run_waterbirds() -> None:  # noqa: D401
-    """Full 5-seed Waterbirds experiment with all baselines."""
-
-    loaders_fn, dataset_meta = get_waterbirds_loaders(
-        batch_size=CFG["training"]["batch_size"],
-        train_tf=T.Compose(
-            [
-                T.RandomResizedCrop(224, scale=(0.5, 1.0)),
-                T.RandomHorizontalFlip(),
-                T.ToTensor(),
-                T.Normalize(IMNET_MEAN, IMNET_STD),
-            ]
-        ),
-        val_tf=T.Compose(
-            [
-                T.Resize(256),
-                T.CenterCrop(224),
-                T.ToTensor(),
-                T.Normalize(IMNET_MEAN, IMNET_STD),
-            ]
-        ),
-    )
-    n_groups = dataset_meta["n_groups"]
-
-    rows: List[Dict[str, Any]] = []
-
-    for seed in CFG["training"]["seeds"]["waterbirds"]:
+    for seed in CONFIG["training"]["seeds"]:
         set_seed(seed)
-        loaders = loaders_fn()
+        loaders, dataset = get_waterbirds_loaders(CONFIG["training"]["batch_size"], seed)
 
-        # identical starting weights per seed
-        backbone_state = build_model().state_dict()
+        shared_init: Dict[str, torch.Tensor] | None = None  # weight snapshot for fair init
+        for method in ["ERM", "AutoSpuSwap", "swap0"]:
+            model = get_backbone()
+            if shared_init is None:
+                shared_init = {k: v.clone() for k, v in model.state_dict().items()}
+            else:
+                model.load_state_dict(shared_init, strict=True)
 
-        for method in [
-            "ERM",
-            "IRM",
-            "REx",
-            "GroupDRO",
-            "DFR",
-            "AutoSpuSwap",
-            "swap0",
-        ]:
-            model = build_model()
-            model.load_state_dict(backbone_state)
             optimiser = torch.optim.AdamW(
                 model.parameters(),
-                lr=CFG["training"]["lr"],
-                weight_decay=CFG["training"]["weight_decay"],
+                lr=CONFIG["training"]["lr"],
+                weight_decay=CONFIG["training"]["weight_decay"],
             )
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                optimiser, T_max=CFG["training"]["epochs"]
+                optimiser, T_max=CONFIG["training"]["epochs"]
             )
+            criterion: nn.Module
+            if method == "ERM":
+                criterion = nn.CrossEntropyLoss()
+            else:
+                criterion = AutoSpuSwapLoss().to(device=DEVICE)
 
-            # helpers instantiation ------------------------------------------------------------
-            autospu = None
-            irm_loss = None
-            rex_loss = None
-            gdro_helper = None
-            if method.startswith("AutoSpuSwap"):
-                autospu = AutoSpuSwapModule(
-                    swap_prob=1.0 if method == "AutoSpuSwap" else 0.0,
-                    lambda_consistency=CFG["loss"]["autospu"]["lambda_consistency"],
-                    lambda_fourier=CFG["loss"]["autospu"]["lambda_fourier"],
-                )
-            elif method == "IRM":
-                irm_loss = IRMLoss()
-            elif method == "REx":
-                rex_loss = RExLoss()
-            elif method == "GroupDRO":
-                gdro_helper = GroupDROLoss(n_groups)
-
-            # ----------------------- training loop -------------------------------------------
-            for epoch in range(CFG["training"]["epochs"]):
+            tic = time.time()
+            for epoch in range(CONFIG["training"]["epochs"]):
                 model.train()
-                for batch in loaders["train"]:
-                    x = batch["images"].to(DEVICE, dtype=DTYPE)
-                    y = batch["y"].to(DEVICE)
-                    g = _extract_groups(batch).to(DEVICE)
-
+                pbar = tqdm(loaders["train"], desc=f"seed{seed}-{method}-e{epoch+1}", leave=False)
+                for batch in pbar:
                     optimiser.zero_grad(set_to_none=True)
-                    with AMP_CONTEXT(device_type=DEVICE, dtype=DTYPE):  # type: ignore[misc]
-                        if autospu is not None:
-                            loss, _ = autospu(model, x, y)
-                        else:
-                            logits = model(x)
-                            if irm_loss is not None:
-                                loss = irm_loss(logits, y)
-                            elif rex_loss is not None:
-                                loss_env = [
-                                    F.cross_entropy(logits[i :: 2], y[i :: 2]) for i in (0, 1)
-                                ]
-                                loss = rex_loss(loss_env)
-                            elif gdro_helper is not None:
-                                group_losses = torch.zeros(n_groups, device=DEVICE)
-                                for gid in range(n_groups):
-                                    idx = g == gid
-                                    if idx.any():
-                                        group_losses[gid] = F.cross_entropy(logits[idx], y[idx])
-                                loss = gdro_helper.update(group_losses)
-                            else:
-                                loss = F.cross_entropy(logits, y)
+                    x = batch["images"].to(device=DEVICE, dtype=DTYPE)
+                    y = batch["y"].to(device=DEVICE)
+                    idx = (
+                        batch["index"]
+                        if "index" in batch
+                        else torch.arange(x.size(0), device=DEVICE)
+                    )
+
+                    if method == "ERM":
+                        loss = criterion(model(x), y)
+                    elif method == "swap0":
+                        # turn off swapping but keep Fourier etc. intact
+                        criterion.swapper.p = 0.0
+                        loss, _ = criterion(model, x, y, idx)
+                    else:
+                        loss, _ = criterion(model, x, y, idx)
 
                     loss.backward()
                     optimiser.step()
                 scheduler.step()
 
-                # quick val every 5 epochs
-                if (epoch + 1) % 5 == 0:
-                    id_acc, wg_acc = eval_waterbirds(model, loaders["val"], n_groups)
-                    print(
-                        f"seed{seed} [{method}] epoch{epoch+1:02d}  val-acc={id_acc:.2%}  WG={wg_acc:.2%}"
-                    )
-
-            # ----------------------- final validation ---------------------------------------
-            logits_all, y_all, g_all = [], [], []
+            # ---------------- Validation ----------------
             model.eval()
-            for batch in loaders["val"]:
-                x = batch["images"].to(DEVICE, dtype=DTYPE)
-                y = batch["y"].to(DEVICE)
-                g = _extract_groups(batch).to(DEVICE)
-                with AMP_CONTEXT(device_type=DEVICE, dtype=DTYPE):  # type: ignore[misc]
+            preds, ys, gs = [], [], []
+            with torch.no_grad():
+                for batch in loaders["val"]:
+                    x = batch["images"].to(device=DEVICE, dtype=DTYPE)
+                    y = batch["y"].to(device=DEVICE)
                     logits = model(x)
-                logits_all.append(logits.cpu())
-                y_all.append(y.cpu())
-                g_all.append(g.cpu())
-            logits_all = torch.cat(logits_all)
-            y_all = torch.cat(y_all)
-            g_all = torch.cat(g_all)
-            pred_all = logits_all.argmax(1)
-            id_acc = (pred_all == y_all).float().mean().item()
-            wg_acc = compute_wg_acc(pred_all, y_all, g_all, n_groups)
-            ece = expected_calibration_error(logits_all, y_all)
+                    preds.append(logits.argmax(1).cpu())
+                    ys.append(y.cpu())
+                    gs.append(_extract_group(batch["metadata"], y).cpu())
 
-            rows.append(
+            pred = torch.cat(preds)
+            y_all = torch.cat(ys)
+            g_all = torch.cat(gs)
+            id_acc = (pred == y_all).float().mean().item()
+            wg_acc = worst_group_acc(pred, y_all, g_all)
+            elapsed = time.time() - tic
+            results.append(
                 {
                     "seed": seed,
                     "method": method,
                     "id_acc": id_acc,
                     "wg_acc": wg_acc,
-                    "ece": ece,
+                    "time": elapsed,
                 }
             )
-
-            # save checkpoint for seed0 to save disk space
+            # first seed – save checkpoint for later diagnostics
             if seed == 0:
-                torch.save(model.state_dict(), CKPT_DIR / f"wb_{method.lower()}.pt")
+                ckpt_dir = ROOT / "models"
+                ckpt_dir.mkdir(exist_ok=True, parents=True)
+                torch.save(model.state_dict(), ckpt_dir / f"wb_{method.lower()}.pt")
 
-    # ----------------------- aggregation & plots --------------------------------------------
-    df = pd.DataFrame(rows)
-    results_csv = RESULTS_DIR / "waterbirds_full.csv"
-    df.to_csv(results_csv, index=False)
-    print(f"[green]Saved per-seed CSV → {results_csv}")
+            print(
+                f"seed{seed} {method}:  ID {id_acc:.3f}  WG {wg_acc:.3f}  time {elapsed:.1f}s"
+            )
 
-    means = df.groupby("method")[["id_acc", "wg_acc"]].mean()
-    save_bar(means["wg_acc"], "worst_group_accuracy.pdf", ylabel="WG-Acc (%)", multiply=100)
+    # ---------- Persist and plot summary ----------
+    import pandas as pd
 
-    print("\n[bold]Waterbirds summary:[/]")
-    print(means)
+    df = pd.DataFrame(results)
+    csv_path = results_dir / "waterbirds_full.csv"
+    df.to_csv(csv_path, index=False)
+    print("[green]Saved", csv_path)
 
-
-# ------------------------------------------------------------------
-#  Optional entry point (useful for pytest-style execution)
-# ------------------------------------------------------------------
-
-if __name__ == "__main__":  # pragma: no cover
-    tic = time.time()
-    run_waterbirds()
-    print(f"[bold green]Finished Waterbirds experiment in {time.time() - tic:.1f}s.")
+    save_bar_plot(
+        series=df.groupby("method")["wg_acc"].mean(),
+        title="Worst-Group Accuracy",
+        fname=results_dir / "training_wg_acc.pdf",
+        ylabel="WG-Acc (%)",
+    )

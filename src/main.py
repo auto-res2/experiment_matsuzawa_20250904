@@ -1,42 +1,36 @@
-"""src/main.py
-Main entry-point orchestrating experiments.  Usage:
-    python -m src.main --exp wb        (Waterbirds)
-    python -m src.main --exp diag      (Diagnostics)
-    python -m src.main --exp all       (default – everything)
+"""
+main.py – project entry point
+Use as:  python -m src.main  [--exp wb|diag|all]
 """
 from __future__ import annotations
-
 import argparse
 import time
-
-import yaml
 from rich import print
 
-from .evaluate import run_diagnostics
-from .train import run_waterbirds
-
-# ------------------------------------------------------------------
-#  Configuration (read-only here – heavy lifting happens in train.py)
-# ------------------------------------------------------------------
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parent.parent
-CONFIG_PATH = ROOT / "config" / "config.yaml"
-CFG = yaml.safe_load(open(CONFIG_PATH, "r", encoding="utf-8"))
+from src.train import run_waterbirds
+from src.evaluate import diagnostics
 
 
-def main() -> None:  # noqa: D401
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--exp", choices=["wb", "diag", "all"], default="all")
-    args = parser.parse_args()
+def _parse_args() -> argparse.Namespace:  # pragma: no cover – cli helper
+    ap = argparse.ArgumentParser(description="AutoSpuSwap experimental driver")
+    ap.add_argument(
+        "--exp",
+        choices=["wb", "diag", "all"],
+        default="all",
+        help="Which experiment to run",
+    )
+    return ap.parse_args()
 
+
+def main() -> None:
+    args = _parse_args()
     tic = time.time()
     if args.exp in ("wb", "all"):
         run_waterbirds()
     if args.exp in ("diag", "all"):
-        run_diagnostics()
-    print(f"\n[bold green]All requested experiments done in {time.time() - tic:.1f}s.[/]")
+        diagnostics()
+    print(f"[bold green]✓ Done in {time.time() - tic:.1f}s")
 
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover – standard pattern
     main()

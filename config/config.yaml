@@ -1,18 +1,19 @@
 dataset:
+  root_dir: data
   waterbirds:
-    version: 1.0
-    root_dir: data
+    version: 2.0
+    masks_npz: masks_npz/waterbirds_masks_224.npz
+    url: https://dl.fbaipublicfiles.com/wilds/waterbirds_v2.0.tgz
 model:
-  name: resnetv2_50x1_bit.goog_in21k_ft_in1k
-  pretrained: true
+  backbone: resnetv2_50x1_bit.goog_in21k_ft_in1k
+  num_classes: 2
 training:
   epochs: 30
   batch_size: 128
   lr: 3e-4
   weight_decay: 0.05
-  seeds:
-    waterbirds: [0, 1, 2, 3, 4]
-loss:
-  autospu:
-    lambda_consistency: 1.0
-    lambda_fourier: 0.3
+  seeds: [0, 1, 2, 3, 4]
+autospu:
+  swap_prob: 1.0
+  lambda_consistency: 1.0
+  lambda_fourier: 0.3
