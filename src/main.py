@@ -1,33 +1,65 @@
-"""src/main.py – orchestrates all experiments (import bootstrap first!)"""
 from __future__ import annotations
+
+"""src/main.py – orchestrates all experiments (import bootstrap first!)"""
 
 # ---------------------------------------------------------------------------
 #  Bootstrap: patch missing torchdata for GraphBolt (must be *first*)
 # ---------------------------------------------------------------------------
-import sys, types
+import sys
+import types
+
+# ---------------------------------------------------------------------------
+#  Helper: very permissive dummy object that absorbs all attribute access /
+#          call without failing.  This avoids import-time errors in DGL's
+#          GraphBolt component that expects a *real* ``torchdata`` install,
+#          while our codebase never relies on it at runtime.
+# ---------------------------------------------------------------------------
+class _NoOp:  # pylint: disable=too-few-public-methods
+    """A do-nothing callable/attr container used for stubbing."""
+
+    def __call__(self, *_, **__):  # noqa: D401, D401 – returns itself so that any chaining works
+        return self
+
+    def __getattr__(self, _):  # noqa: D401, D401 – always succeed
+        return self
+
+    def __iter__(self):
+        return iter(())
+
+    def __len__(self):
+        return 0
+
+
 if "torchdata" not in sys.modules:
+    # Root *torchdata* module -------------------------------------------------
     td_root = types.ModuleType("torchdata")
     sys.modules["torchdata"] = td_root
+
+    # ---- torchdata.datapipes.* ---------------------------------------------
     dp_mod = types.ModuleType("torchdata.datapipes")
     iter_mod = types.ModuleType("torchdata.datapipes.iter")
-
-    class _IterDataPipe:  # minimal placeholder
-        def __iter__(self):
-            return iter(())
-        def __len__(self):
-            return 0
-
-    iter_mod.IterDataPipe = _IterDataPipe
+    iter_mod.IterDataPipe = _NoOp  # minimal placeholder
     dp_mod.iter = iter_mod
-    td_root.datapipes = dp_mod
+
     sys.modules["torchdata.datapipes"] = dp_mod
     sys.modules["torchdata.datapipes.iter"] = iter_mod
+
+    # ---- torchdata.dataloader2.* -------------------------------------------
+    dl2_mod = types.ModuleType("torchdata.dataloader2")
+    graph_mod = types.ModuleType("torchdata.dataloader2.graph")
+    # Expose a couple of dummy symbols that GraphBolt may reference
+    graph_mod.DataLoader2Graph = _NoOp
+    graph_mod.MapDataPipe = _NoOp
+    dl2_mod.graph = graph_mod
+
+    sys.modules["torchdata.dataloader2"] = dl2_mod
+    sys.modules["torchdata.dataloader2.graph"] = graph_mod
 
 # ---------------------------------------------------------------------------
 #  Standard imports *after* the bootstrap                                    
 # ---------------------------------------------------------------------------
-import yaml
 from pathlib import Path
+import yaml
 import torch
 
 from .evaluate import run_depth, run_noise, run_papers
@@ -38,7 +70,7 @@ from .evaluate import run_depth, run_noise, run_papers
 CFG_DEFAULT_YAML = """
 common:
   device: cuda            # auto-fallback handled in code
-  output_root: .research/iteration7/images
+  output_root: .research/iteration8/images
   seeds: [11, 22, 33, 44, 55]
 train:
   lr: 3e-3
@@ -69,11 +101,16 @@ if CONFIG_PATH.exists():
 else:
     CFG = yaml.safe_load(CFG_DEFAULT_YAML)
 
-# -------- device fallback ----------------------------------------------------
+# -------- ensure image path complies with iteration8 requirement -----------
+ITER8_PATH = ".research/iteration8/images"
+if CFG["common"].get("output_root", "") != ITER8_PATH:
+    CFG["common"]["output_root"] = ITER8_PATH
+
+# -------- device fallback ---------------------------------------------------
 if CFG["common"]["device"] == "cuda" and not torch.cuda.is_available():
     CFG["common"]["device"] = "cpu"
 
-# -------- persist config -----------------------------------------------------
+# -------- persist config ----------------------------------------------------
 out_root = Path(CFG["common"]["output_root"])
 out_root.mkdir(parents=True, exist_ok=True)
 with open(out_root / "metadata.yaml", "w") as f:
