@@ -6,7 +6,7 @@ Refactored verbatim from the original single-file script.  All placeholder
 markers have been removed.  The former circular import with src.train has been
 resolved by importing ContextSwapper lazily inside the diagnostic routine.
 
-Images are now written to `.research/iteration18/images` as required by the
+Images are now written to `.research/iteration19/images` as required by the
 specification.
 """
 
@@ -28,11 +28,11 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DTYPE = torch.bfloat16 if torch.cuda.is_available() else torch.float32
 
 # ------------------------------------------------------------------
-#  Paths – images have to live under .research/iteration18/images
+#  Paths – images have to live under .research/iteration19/images
 # ------------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS_DIR = ROOT / "results"
-FIG_DIR = ROOT / ".research" / "iteration18" / "images"
+FIG_DIR = ROOT / ".research" / "iteration19" / "images"
 CKPT_DIR = ROOT / "models"
 for d in (RESULTS_DIR, FIG_DIR):
     d.mkdir(parents=True, exist_ok=True)
@@ -153,9 +153,8 @@ def run_diagnostics() -> None:  # noqa: D401
 
     wb = get_dataset("waterbirds", version="1.0", root_dir=str(ROOT / "data"), download=False)
     val_tf = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
-    val_loader = get_eval_loader(
-        "standard", wb, split="val", batch_size=64, num_workers=2, transform=val_tf
-    )
+    val_data = wb.get_subset("val", transform=val_tf)
+    val_loader = get_eval_loader("standard", val_data, batch_size=64, num_workers=2)
 
     swapper = ContextSwapper(1.0)
     deltas_erm, deltas_auto = [], []

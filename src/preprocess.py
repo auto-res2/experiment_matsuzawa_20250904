@@ -3,8 +3,6 @@ Data-loading & preprocessing utilities (currently Waterbirds only).
 """
 from __future__ import annotations
 
-# All placeholder tokens removed.
-
 from pathlib import Path
 from typing import Any, Callable, Dict, Tuple
 
@@ -16,7 +14,6 @@ try:
 except ImportError as exc:  # pragma: no cover
     print("[bold red]wilds package missing – please  pip install wilds>=2.0")
     raise exc
-
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -36,19 +33,28 @@ def get_waterbirds_loaders(
     wb = get_dataset("waterbirds", version="1.0", root_dir=str(DATA_DIR), download=True)
 
     def make_loader(split: str):
-        loader_fn = get_train_loader if split == "train" else get_eval_loader
-        mode = "standard"  # both train/val use standard loader here
-        tf = train_tf if split == "train" else val_tf
-        return loader_fn(
-            mode,
-            wb,
-            split=split,
+        """Create a DataLoader for the requested split."""
+        subset = wb.get_subset(split, transform=(train_tf if split == "train" else val_tf))
+        if split == "train":
+            # Training loader – shuffle & drop last for batchnorm stability
+            return get_train_loader(
+                "standard",
+                subset,
+                batch_size=batch_size,
+                num_workers=4,
+                shuffle=True,
+                drop_last=True,
+            )
+        # Validation / test loaders – deterministic ordering
+        return get_eval_loader(
+            "standard",
+            subset,
             batch_size=batch_size,
             num_workers=4,
-            transform=tf,
         )
 
-    def loader_factory():  # new DataLoader objects each call
+    def loader_factory() -> Dict[str, Any]:
+        """Return fresh train/val loaders – useful for each new random seed."""
         return {s: make_loader(s) for s in ("train", "val")}
 
     n_groups = getattr(wb, "n_groups", 4) or 4
