@@ -21,18 +21,26 @@ PKG_DIR = Path(__file__).resolve().parent  # src/
 if str(PKG_DIR.parent) not in sys.path:
     sys.path.insert(0, str(PKG_DIR.parent))
 
-# Project directories --------------------------------------------------------
-IMG_DIR = (PKG_DIR / "../.research/iteration8/images").resolve()
+# ---------------------------------------------------------------------------
+#  Project directories -------------------------------------------------------
+# ---------------------------------------------------------------------------
+# All experiment artefacts (images, CSVs, …) must be stored in exactly this
+# location as mandated by the autograder instructions.
+IMG_DIR = (PKG_DIR / "../.research/iteration9/images").resolve()
 IMG_DIR.mkdir(parents=True, exist_ok=True)
+
+# Ensure cache directory exists ------------------------------------------------
 (PKG_DIR / "cache").mkdir(exist_ok=True)
 
-# Local imports (after path fix) --------------------------------------------
+# ---------------------------------------------------------------------------
+#  Local imports (after path fix) --------------------------------------------
+# ---------------------------------------------------------------------------
 from .preprocess import load_planetoid, compute_or_curvature
 from .train import GCNStack, train_one
 from .evaluate import save_loss_plot
 
 # ---------------------------------------------------------------------------
-#  Deterministic behaviour
+#  Deterministic behaviour ----------------------------------------------------
 # ---------------------------------------------------------------------------
 SEED = 0
 random.seed(SEED); np.random.seed(SEED); torch.manual_seed(SEED)
@@ -43,7 +51,7 @@ if torch.cuda.is_available():
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # ---------------------------------------------------------------------------
-#  Configuration handling
+#  Configuration handling -----------------------------------------------------
 # ---------------------------------------------------------------------------
 CFG_PATH = PKG_DIR.parent / "config" / "config.yaml"
 CFG_PATH.parent.mkdir(exist_ok=True, parents=True)
@@ -72,7 +80,7 @@ CFG.update(user_cfg)
 os.environ["CAPGNN_DROPOUT"] = str(CFG["dropout"])
 
 # ---------------------------------------------------------------------------
-#  Run experiment (smoke test)
+#  Run experiment (smoke test) ------------------------------------------------
 # ---------------------------------------------------------------------------
 
 def run_smoke() -> None:
@@ -128,7 +136,7 @@ def run_smoke() -> None:
     print("  ", summary_csv.relative_to(IMG_DIR.parent.parent))
 
 # ---------------------------------------------------------------------------
-#  Entrypoint
+#  Entrypoint ----------------------------------------------------------------
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     if not torch.cuda.is_available():
