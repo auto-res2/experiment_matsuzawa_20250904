@@ -1,7 +1,7 @@
+from __future__ import annotations
 """
 preprocess.py – data loading and curvature pre-computation
 """
-from __future__ import annotations
 import os, sys, json
 from pathlib import Path
 from typing import Tuple
@@ -13,7 +13,12 @@ from torch_geometric.utils import add_self_loops
 from torch_geometric.datasets import Planetoid, WikipediaNetwork
 from ogb.nodeproppred import PygNodePropPredDataset
 import networkx as nx
-from graphricci.curvature import OllivierRicci  # pip install GraphRicciCurvature==0.6
+
+# NOTE: the correct PyPI package name is *GraphRicciCurvature* (with capital G) – not
+# “graphricci”.  Using the wrong name breaks installation and consequently the entire
+# pipeline.  We therefore import from the right location and pinned version (see
+# requirements.txt).
+from GraphRicciCurvature.OllivierRicci import OllivierRicci  # noqa: E402
 
 # --------------------------------------------------
 
@@ -32,7 +37,7 @@ def load_dataset(name: str, data_dir: Path = Path("data")):
         for split in ("train", "valid", "test"):
             mask = torch.zeros(data.num_nodes, dtype=torch.bool)
             mask[split_idx[split]] = True
-            setattr(data, f"{split[:3]}_mask", mask)  # train_mask etc.
+            setattr(data, f"{split[:3]}_mask", mask)  # train_mask, val_mask, tst_mask
         data.edge_index, _ = add_self_loops(data.edge_index)
     else:
         raise ValueError(f"Dataset {name} not supported.")
@@ -47,6 +52,7 @@ def compute_or_curvature(data, cache_file: Path) -> torch.Tensor:
     if cache_file.is_file():
         return torch.load(cache_file)
 
+    # convert to an undirected NetworkX graph (required by GraphRicciCurvature)
     g = data.to_networkx().to_undirected()
     orc = OllivierRicci(g, alpha=0.5, verbose="ERROR")
     orc.compute_ricci_curvature()
@@ -54,6 +60,7 @@ def compute_or_curvature(data, cache_file: Path) -> torch.Tensor:
     kappa_vals = []
     rows, cols = data.edge_index
     for u, v in zip(rows.tolist(), cols.tolist()):
+        # the library stores curvature on undirected edges; make sure (u,v) exists
         kappa_vals.append(orc.G[u][v]["ricciCurvature"])
     kappa = torch.tensor(kappa_vals, dtype=torch.float32)
     torch.save(kappa, cache_file)
