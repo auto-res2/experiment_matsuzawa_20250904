@@ -2,7 +2,8 @@
 
 torch==2.2.0
 torch_geometric==2.5.2
-numpy
+# Pin NumPy to <2 to avoid ABI incompatibilities with pre-built extensions
+numpy<2.0
 scipy
 networkx
 matplotlib

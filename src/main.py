@@ -1,4 +1,3 @@
-# Updated main.py – orchestrates training & evaluation for CurvAMP experiments
 from __future__ import annotations
 
 import random
@@ -69,7 +68,7 @@ def main():
         accs: List[float] = []
         for seed in cfg["seeds"]:
             _set_seeds(seed)
-            model, train_log = train_model(data, cfg, device)
+            model, _ = train_model(data, cfg, device)
             model.eval()
             with torch.no_grad():
                 logits, feats = model(data)
@@ -77,7 +76,7 @@ def main():
             accs.append(result["acc"])
 
         print(
-            f"Test accuracy mean±std: {np.mean(accs):.3f} ± {np.std(accs):.3f}\nFigures saved in .research/iteration8/images."
+            f"Test accuracy mean±std: {np.mean(accs):.3f} ± {np.std(accs):.3f}\nFigures saved in .research/iteration9/images."
         )
 
 

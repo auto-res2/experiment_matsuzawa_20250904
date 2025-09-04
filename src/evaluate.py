@@ -1,4 +1,3 @@
-# Updated evaluate.py – evaluation utilities, metrics & plotting for CurvAMP experiments
 from __future__ import annotations
 from pathlib import Path
 from typing import List, Dict, Any
@@ -6,9 +5,7 @@ from typing import List, Dict, Any
 import math
 
 import matplotlib.pyplot as plt
-import numpy as np
 import torch
-from scipy.sparse.linalg import cg  # type: ignore
 
 # -----------------------------------------------------------------------------
 #  Helper that avoids torch_scatter / torch_sparse dependencies
@@ -21,7 +18,9 @@ def _edge_index_to_dense(edge_index: torch.Tensor, num_nodes: int) -> torch.Tens
     row, col = edge_index
     device = row.device
     A = torch.zeros((num_nodes, num_nodes), dtype=torch.float32, device=device)
+    # add both (i,j) and (j,i) to guarantee symmetry
     A.index_put_((row, col), torch.ones_like(row, dtype=A.dtype), accumulate=True)
+    A.index_put_((col, row), torch.ones_like(row, dtype=A.dtype), accumulate=True)
     return A
 
 # -----------------------------------------------------------------------------
@@ -52,11 +51,26 @@ def gdr(z: torch.Tensor, y: torch.Tensor) -> float:
         return (inter / intra).item()
 
 
+# -----------------------------------------------------------------------------
+#  Effective-resistance helper (pure torch, no SciPy / NumPy dependency)
+# -----------------------------------------------------------------------------
+
 def _effective_resistance(L: torch.Tensor) -> torch.Tensor:
-    n = L.shape[0]
-    b = torch.eye(n, dtype=torch.float64)
-    x, _ = cg(L.cpu().numpy(), b.numpy(), atol=1e-3)
-    return torch.from_numpy(x)
+    """Returns the matrix of effective resistances using the Moore-Penrose pseudo-inverse.
+
+    For small graphs (⪅1k nodes) this dense formulation is fine and removes the heavy
+    SciPy dependency as well as the NumPy ABI issues we ran into.
+    """
+    # Work on CPU in double precision for numerical stability.
+    L = L.double().cpu()
+
+    # The Laplacian is singular; its pseudo-inverse can be obtained directly.
+    L_pinv = torch.linalg.pinv(L)  # (n,n)
+
+    diag = torch.diagonal(L_pinv)
+    # R_ij = L^+_{ii} + L^+_{jj} − 2 L^+_{ij}
+    R = diag.unsqueeze(0) + diag.unsqueeze(1) - 2 * L_pinv
+    return R.float()  # cast back to float32 to save memory
 
 
 def ater(edge_index: torch.Tensor, num_nodes: int) -> float:
@@ -71,7 +85,7 @@ def ater(edge_index: torch.Tensor, num_nodes: int) -> float:
 #  Plotting helpers
 # -----------------------------------------------------------------------------
 
-_FIG_DIR = Path(".research/iteration8/images")
+_FIG_DIR = Path(".research/iteration9/images")
 _FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
