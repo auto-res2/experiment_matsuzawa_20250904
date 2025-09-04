@@ -5,3 +5,748 @@
   publisher = {GitHub},
   url       = {https://github.com/airas-org/airas}
 }
+
+% ===========================================
+% REQUIRED CITATIONS
+% These papers must be cited in the manuscript
+% ===========================================
+
+@article{author-year-contextual,
+ title = {Contextual Transformation Networks for Online Continual Learning}
+}
+
+@article{author-year-decoupling,
+ title = {Decoupling Learning and Remembering: A Bilevel Memory Framework With Knowledge Projection for Task-Incremental Learning}
+}
+
+@article{author-year-long,
+ title = {Long Live the Lottery: The Existence of Winning Tickets in Lifelong Learning}
+}
+
+@article{author-year-mecta,
+ title = {MECTA: Memory-Economic Continual Test-Time Model Adaptation}
+}
+
+@article{chaudhry-2020-continual,
+ abstract = {In continual learning (CL), a learner is faced with a sequence of tasks,
+arriving one after the other, and the goal is to remember all the tasks once
+the continual learning experience is finished. The prior art in CL uses
+episodic memory, parameter regularization or extensible network structures to
+reduce interference among tasks, but in the end, all the approaches learn
+different tasks in a joint vector space. We believe this invariably leads to
+interference among different tasks. We propose to learn tasks in different
+(low-rank) vector subspaces that are kept orthogonal to each other in order to
+minimize interference. Further, to keep the gradients of different tasks coming
+from these subspaces orthogonal to each other, we learn isometric mappings by
+posing network training as an optimization problem over the Stiefel manifold.
+To the best of our understanding, we report, for the first time, strong results
+over experience-replay baseline with and without memory on standard
+classification benchmarks in continual learning. The code is made publicly
+available.},
+ arxiv_url = {https://arxiv.org/pdf/2010.11635v2.pdf},
+ author = {Arslan Chaudhry and Naeemullah Khan and Puneet K. Dokania and Philip H. S. Torr},
+ github_url = {https://github.com/arslan-chaudhry/orthog_subspace},
+ journal = {NeurIPS, 2020},
+ title = {Continual Learning in Low-rank Orthogonal Subspaces},
+ year = {2020}
+}
+
+@article{chen-2021-improving,
+ abstract = {Recent advances in off-policy deep reinforcement learning (RL) have led to
+impressive success in complex tasks from visual observations. Experience replay
+improves sample-efficiency by reusing experiences from the past, and
+convolutional neural networks (CNNs) process high-dimensional inputs
+effectively. However, such techniques demand high memory and computational
+bandwidth. In this paper, we present Stored Embeddings for Efficient
+Reinforcement Learning (SEER), a simple modification of existing off-policy RL
+methods, to address these computational and memory requirements. To reduce the
+computational overhead of gradient updates in CNNs, we freeze the lower layers
+of CNN encoders early in training due to early convergence of their parameters.
+Additionally, we reduce memory requirements by storing the low-dimensional
+latent vectors for experience replay instead of high-dimensional images,
+enabling an adaptive increase in the replay buffer capacity, a useful technique
+in constrained-memory settings. In our experiments, we show that SEER does not
+degrade the performance of RL agents while significantly saving computation and
+memory across a diverse set of DeepMind Control environments and Atari games.},
+ arxiv_url = {https://arxiv.org/pdf/2103.02886v2.pdf},
+ author = {Lili Chen and Kimin Lee and Aravind Srinivas and Pieter Abbeel},
+ github_url = {https://github.com/MishaLaskin/curl},
+ title = {Improving Computational Efficiency in Visual Reinforcement Learning via Stored Embeddings},
+ year = {2021}
+}
+
+@article{ebrahimi-2019-uncertainty,
+ abstract = {Continual learning aims to learn new tasks without forgetting previously
+learned ones. This is especially challenging when one cannot access data from
+previous tasks and when the model has a fixed capacity. Current
+regularization-based continual learning algorithms need an external
+representation and extra computation to measure the parameters'
+\textit{importance}. In contrast, we propose Uncertainty-guided Continual
+Bayesian Neural Networks (UCB), where the learning rate adapts according to the
+uncertainty defined in the probability distribution of the weights in networks.
+Uncertainty is a natural way to identify \textit{what to remember} and
+\textit{what to change} as we continually learn, and thus mitigate catastrophic
+forgetting. We also show a variant of our model, which uses uncertainty for
+weight pruning and retains task performance after pruning by saving binary
+masks per tasks. We evaluate our UCB approach extensively on diverse object
+classification datasets with short and long sequences of tasks and report
+superior or on-par performance compared to existing approaches. Additionally,
+we show that our model does not necessarily need task information at test time,
+i.e. it does not presume knowledge of which task a sample belongs to.},
+ arxiv_url = {https://arxiv.org/pdf/1906.02425v2.pdf},
+ author = {Sayna Ebrahimi and Mohamed Elhoseiny and Trevor Darrell and Marcus Rohrbach},
+ github_url = {https://github.com/SaynaEbrahimi/UCB},
+ title = {Uncertainty-guided Continual Learning with Bayesian Neural Networks},
+ year = {2019}
+}
+
+@article{gupta-2020-look,
+ abstract = {The continual learning problem involves training models with limited capacity
+to perform well on a set of an unknown number of sequentially arriving tasks.
+While meta-learning shows great potential for reducing interference between old
+and new tasks, the current training procedures tend to be either slow or
+offline, and sensitive to many hyper-parameters. In this work, we propose
+Look-ahead MAML (La-MAML), a fast optimisation-based meta-learning algorithm
+for online-continual learning, aided by a small episodic memory. Our proposed
+modulation of per-parameter learning rates in our meta-learning update allows
+us to draw connections to prior work on hypergradients and meta-descent. This
+provides a more flexible and efficient way to mitigate catastrophic forgetting
+compared to conventional prior-based methods. La-MAML achieves performance
+superior to other replay-based, prior-based and meta-learning based approaches
+for continual learning on real-world visual classification benchmarks. Source
+code can be found here: https://github.com/montrealrobotics/La-MAML},
+ arxiv_url = {https://arxiv.org/pdf/2007.13904v2.pdf},
+ author = {Gunshi Gupta and Karmesh Yadav and Liam Paull},
+ github_url = {https://github.com/montrealrobotics/La-MAML},
+ title = {Look-ahead Meta Learning for Continual Learning},
+ year = {2020}
+}
+
+@article{gurbuz-2022-nispa,
+ abstract = {The goal of continual learning (CL) is to learn different tasks over time.
+The main desiderata associated with CL are to maintain performance on older
+tasks, leverage the latter to improve learning of future tasks, and to
+introduce minimal overhead in the training process (for instance, to not
+require a growing model or retraining). We propose the Neuro-Inspired
+Stability-Plasticity Adaptation (NISPA) architecture that addresses these
+desiderata through a sparse neural network with fixed density. NISPA forms
+stable paths to preserve learned knowledge from older tasks. Also, NISPA uses
+connection rewiring to create new plastic paths that reuse existing knowledge
+on novel tasks. Our extensive evaluation on EMNIST, FashionMNIST, CIFAR10, and
+CIFAR100 datasets shows that NISPA significantly outperforms representative
+state-of-the-art continual learning baselines, and it uses up to ten times
+fewer learnable parameters compared to baselines. We also make the case that
+sparsity is an essential ingredient for continual learning. The NISPA code is
+available at https://github.com/BurakGurbuz97/NISPA.},
+ arxiv_url = {https://arxiv.org/pdf/2206.09117v1.pdf},
+ author = {Mustafa Burak Gurbuz and Constantine Dovrolis},
+ github_url = {https://github.com/BurakGurbuz97/NISPA},
+ title = {NISPA: Neuro-Inspired Stability-Plasticity Adaptation for Continual Learning in Sparse Networks},
+ year = {2022}
+}
+
+@article{kumar-2019-bayesian,
+ abstract = {Continual Learning is a learning paradigm where learning systems are trained
+with sequential or streaming tasks. Two notable directions among the recent
+advances in continual learning with neural networks are ($i$) variational Bayes
+based regularization by learning priors from previous tasks, and, ($ii$)
+learning the structure of deep networks to adapt to new tasks. So far, these
+two approaches have been orthogonal. We present a novel Bayesian approach to
+continual learning based on learning the structure of deep neural networks,
+addressing the shortcomings of both these approaches. The proposed model learns
+the deep structure for each task by learning which weights to be used, and
+supports inter-task transfer through the overlapping of different sparse
+subsets of weights learned by different tasks. Experimental results on
+supervised and unsupervised benchmarks shows that our model performs comparably
+or better than recent advances in continual learning setting.},
+ arxiv_url = {https://arxiv.org/pdf/1912.03624v2.pdf},
+ author = {Abhishek Kumar and Sunabha Chatterjee and Piyush Rai},
+ github_url = {https://github.com/joansj/hat},
+ title = {Bayesian Structural Adaptation for Continual Learning},
+ year = {2019}
+}
+
+@article{lahire-2021-large,
+ abstract = {Several algorithms have been proposed to sample non-uniformly the replay
+buffer of deep Reinforcement Learning (RL) agents to speed-up learning, but
+very few theoretical foundations of these sampling schemes have been provided.
+Among others, Prioritized Experience Replay appears as a hyperparameter
+sensitive heuristic, even though it can provide good performance. In this work,
+we cast the replay buffer sampling problem as an importance sampling one for
+estimating the gradient. This allows deriving the theoretically optimal
+sampling distribution, yielding the best theoretical convergence speed.
+Elaborating on the knowledge of the ideal sampling scheme, we exhibit new
+theoretical foundations of Prioritized Experience Replay. The optimal sampling
+distribution being intractable, we make several approximations providing good
+results in practice and introduce, among others, LaBER (Large Batch Experience
+Replay), an easy-to-code and efficient method for sampling the replay buffer.
+LaBER, which can be combined with Deep Q-Networks, distributional RL agents or
+actor-critic methods, yields improved performance over a diverse range of Atari
+games and PyBullet environments, compared to the base agent it is implemented
+on and to other prioritization schemes.},
+ arxiv_url = {https://arxiv.org/pdf/2110.01528v2.pdf},
+ author = {Thibault Lahire and Matthieu Geist and Emmanuel Rachelson},
+ github_url = {https://github.com/sureli/laber},
+ title = {Large Batch Experience Replay},
+ year = {2021}
+}
+
+@article{li-2024-efficient,
+ abstract = {Incremental graph learning has gained significant attention for its ability
+to address the catastrophic forgetting problem in graph representation
+learning. However, traditional methods often rely on a large number of labels
+for node classification, which is impractical in real-world applications. This
+makes few-shot incremental learning on graphs a pressing need. Current methods
+typically require extensive training samples from meta-learning to build memory
+and perform intensive fine-tuning of GNN parameters, leading to high memory
+consumption and potential loss of previously learned knowledge. To tackle these
+challenges, we introduce Mecoin, an efficient method for building and
+maintaining memory. Mecoin employs Structured Memory Units to cache prototypes
+of learned categories, as well as Memory Construction Modules to update these
+prototypes for new categories through interactions between the nodes and the
+cached prototypes. Additionally, we have designed a Memory Representation
+Adaptation Module to store probabilities associated with each class prototype,
+reducing the need for parameter fine-tuning and lowering the forgetting rate.
+When a sample matches its corresponding class prototype, the relevant
+probabilities are retrieved from the MRaM. Knowledge is then distilled back
+into the GNN through a Graph Knowledge Distillation Module, preserving the
+model's memory. We analyze the effectiveness of Mecoin in terms of
+generalization error and explore the impact of different distillation
+strategies on model performance through experiments and VC-dimension analysis.
+Compared to other related works, Mecoin shows superior performance in accuracy
+and forgetting rate. Our code is publicly available on the
+https://github.com/Arvin0313/Mecoin-GFSCIL.git .},
+ arxiv_url = {https://arxiv.org/pdf/2411.06659v1.pdf},
+ author = {Dong Li and Aijia Zhang and Junqi Gao and Biqing Qi},
+ title = {An Efficient Memory Module for Graph Few-Shot Class-Incremental Learning},
+ year = {2024}
+}
+
+@article{liu-2022-navigating,
+ abstract = {Continual learning faces a crucial challenge of catastrophic forgetting. To
+address this challenge, experience replay (ER) that maintains a tiny subset of
+samples from previous tasks has been commonly used. Existing ER works usually
+focus on refining the learning objective for each task with a static memory
+construction policy. In this paper, we formulate the dynamic memory
+construction in ER as a combinatorial optimization problem, which aims at
+directly minimizing the global loss across all experienced tasks. We first
+apply three tactics to solve the problem in the offline setting as a starting
+point. To provide an approximate solution to this problem in the online
+continual learning setting, we further propose the Global Pseudo-task
+Simulation (GPS), which mimics future catastrophic forgetting of the current
+task by permutation. Our empirical results and analyses suggest that the GPS
+consistently improves accuracy across four commonly used vision benchmarks. We
+have also shown that our GPS can serve as the unified framework for integrating
+various memory construction policies in existing ER works.},
+ arxiv_url = {https://arxiv.org/pdf/2210.08442v1.pdf},
+ author = {Yejia Liu and Wang Zhu and Shaolei Ren},
+ github_url = {https://github.com/liuyejia/gps_cl},
+ title = {Navigating Memory Construction by Global Pseudo-Task Simulation for Continual Learning},
+ year = {2022}
+}
+
+@article{liu-2023-rmm,
+ abstract = {Class-Incremental Learning (CIL) [40] trains classifiers under a strict
+memory budget: in each incremental phase, learning is done for new data, most
+of which is abandoned to free space for the next phase. The preserved data are
+exemplars used for replaying. However, existing methods use a static and ad hoc
+strategy for memory allocation, which is often sub-optimal. In this work, we
+propose a dynamic memory management strategy that is optimized for the
+incremental phases and different object classes. We call our method reinforced
+memory management (RMM), leveraging reinforcement learning. RMM training is not
+naturally compatible with CIL as the past, and future data are strictly
+non-accessible during the incremental phases. We solve this by training the
+policy function of RMM on pseudo CIL tasks, e.g., the tasks built on the data
+of the 0-th phase, and then applying it to target tasks. RMM propagates two
+levels of actions: Level-1 determines how to split the memory between old and
+new classes, and Level-2 allocates memory for each specific class. In essence,
+it is an optimizable and general method for memory management that can be used
+in any replaying-based CIL method. For evaluation, we plug RMM into two
+top-performing baselines (LUCIR+AANets and POD+AANets [30]) and conduct
+experiments on three benchmarks (CIFAR-100, ImageNet-Subset, and
+ImageNet-Full). Our results show clear improvements, e.g., boosting POD+AANets
+by 3.6%, 4.4%, and 1.9% in the 25-Phase settings of the above benchmarks,
+respectively.},
+ arxiv_url = {https://arxiv.org/pdf/2301.05792v1.pdf},
+ author = {Yaoyao Liu and Bernt Schiele and Qianru Sun},
+ title = {RMM: Reinforced Memory Management for Class-Incremental Learning},
+ year = {2023}
+}
+
+@article{pei-2022-learning,
+ abstract = {Recent incremental learning for action recognition usually stores
+representative videos to mitigate catastrophic forgetting. However, only a few
+bulky videos can be stored due to the limited memory. To address this problem,
+we propose FrameMaker, a memory-efficient video class-incremental learning
+approach that learns to produce a condensed frame for each selected video.
+Specifically, FrameMaker is mainly composed of two crucial components: Frame
+Condensing and Instance-Specific Prompt. The former is to reduce the memory
+cost by preserving only one condensed frame instead of the whole video, while
+the latter aims to compensate the lost spatio-temporal details in the Frame
+Condensing stage. By this means, FrameMaker enables a remarkable reduction in
+memory but keep enough information that can be applied to following incremental
+tasks. Experimental results on multiple challenging benchmarks, i.e., HMDB51,
+UCF101 and Something-Something V2, demonstrate that FrameMaker can achieve
+better performance to recent advanced methods while consuming only 20% memory.
+Additionally, under the same memory consumption conditions, FrameMaker
+significantly outperforms existing state-of-the-arts by a convincing margin.},
+ arxiv_url = {https://arxiv.org/pdf/2211.00833v1.pdf},
+ author = {Yixuan Pei and Zhiwu Qing and Jun Cen and Xiang Wang and Shiwei Zhang and Yaxiong Wang and Mingqian Tang and Nong Sang and Xueming Qian},
+ title = {Learning a Condensed Frame for Memory-Efficient Video Class-Incremental Learning},
+ year = {2022}
+}
+
+@article{shashua-2022-analysis,
+ abstract = {Replay buffers are a key component in many reinforcement learning schemes.
+Yet, their theoretical properties are not fully understood. In this paper we
+analyze a system where a stochastic process X is pushed into a replay buffer
+and then randomly sampled to generate a stochastic process Y from the replay
+buffer. We provide an analysis of the properties of the sampled process such as
+stationarity, Markovity and autocorrelation in terms of the properties of the
+original process. Our theoretical analysis sheds light on why replay buffer may
+be a good de-correlator. Our analysis provides theoretical tools for proving
+the convergence of replay buffer based algorithms which are prevalent in
+reinforcement learning schemes.},
+ arxiv_url = {https://arxiv.org/pdf/2206.12848v1.pdf},
+ author = {Shirli Di Castro Shashua and Shie Mannor and Dotan Di-Castro},
+ title = {Analysis of Stochastic Processes through Replay Buffers},
+ year = {2022}
+}
+
+@article{tong-2022-incremental,
+ abstract = {This work proposes a minimal computational model for learning structured
+memories of multiple object classes in an incremental setting. Our approach is
+based on establishing a closed-loop transcription between the classes and a
+corresponding set of subspaces, known as a linear discriminative
+representation, in a low-dimensional feature space. Our method is simpler than
+existing approaches for incremental learning, and more efficient in terms of
+model size, storage, and computation: it requires only a single, fixed-capacity
+autoencoding network with a feature space that is used for both discriminative
+and generative purposes. Network parameters are optimized simultaneously
+without architectural manipulations, by solving a constrained minimax game
+between the encoding and decoding maps over a single rate reduction-based
+objective. Experimental results show that our method can effectively alleviate
+catastrophic forgetting, achieving significantly better performance than prior
+work of generative replay on MNIST, CIFAR-10, and ImageNet-50, despite
+requiring fewer resources. Source code can be found at
+https://github.com/tsb0601/i-CTRL},
+ arxiv_url = {https://arxiv.org/pdf/2202.05411v3.pdf},
+ author = {Shengbang Tong and Xili Dai and Ziyang Wu and Mingyang Li and Brent Yi and Yi Ma},
+ github_url = {https://github.com/tsb0601/i-CTRL},
+ title = {Incremental Learning of Structured Memory via Closed-Loop Transcription},
+ year = {2022}
+}
+
+@article{wang-2022-improving,
+ abstract = {Task-free continual learning (CL) aims to learn a non-stationary data stream
+without explicit task definitions and not forget previous knowledge. The widely
+adopted memory replay approach could gradually become less effective for long
+data streams, as the model may memorize the stored examples and overfit the
+memory buffer. Second, existing methods overlook the high uncertainty in the
+memory data distribution since there is a big gap between the memory data
+distribution and the distribution of all the previous data examples. To address
+these problems, for the first time, we propose a principled memory evolution
+framework to dynamically evolve the memory data distribution by making the
+memory buffer gradually harder to be memorized with distributionally robust
+optimization (DRO). We then derive a family of methods to evolve the memory
+buffer data in the continuous probability measure space with Wasserstein
+gradient flow (WGF). The proposed DRO is w.r.t the worst-case evolved memory
+data distribution, thus guarantees the model performance and learns
+significantly more robust features than existing memory-replay-based methods.
+Extensive experiments on existing benchmarks demonstrate the effectiveness of
+the proposed methods for alleviating forgetting. As a by-product of the
+proposed framework, our method is more robust to adversarial examples than
+existing task-free CL methods. Code is available on GitHub
+\url{https://github.com/joey-wang123/DRO-Task-free}},
+ arxiv_url = {https://arxiv.org/pdf/2207.07256v2.pdf},
+ author = {Zhenyi Wang and Li Shen and Le Fang and Qiuling Suo and Tiehang Duan and Mingchen Gao},
+ title = {Improving Task-free Continual Learning by Distributionally Robust Memory Evolution},
+ year = {2022}
+}
+
+@article{wang-2022-sparcl,
+ abstract = {Existing work in continual learning (CL) focuses on mitigating catastrophic
+forgetting, i.e., model performance deterioration on past tasks when learning a
+new task. However, the training efficiency of a CL system is
+under-investigated, which limits the real-world application of CL systems under
+resource-limited scenarios. In this work, we propose a novel framework called
+Sparse Continual Learning(SparCL), which is the first study that leverages
+sparsity to enable cost-effective continual learning on edge devices. SparCL
+achieves both training acceleration and accuracy preservation through the
+synergy of three aspects: weight sparsity, data efficiency, and gradient
+sparsity. Specifically, we propose task-aware dynamic masking (TDM) to learn a
+sparse network throughout the entire CL process, dynamic data removal (DDR) to
+remove less informative training data, and dynamic gradient masking (DGM) to
+sparsify the gradient updates. Each of them not only improves efficiency, but
+also further mitigates catastrophic forgetting. SparCL consistently improves
+the training efficiency of existing state-of-the-art (SOTA) CL methods by at
+most 23X less training FLOPs, and, surprisingly, further improves the SOTA
+accuracy by at most 1.7%. SparCL also outperforms competitive baselines
+obtained from adapting SOTA sparse training methods to the CL setting in both
+efficiency and accuracy. We also evaluate the effectiveness of SparCL on a real
+mobile phone, further indicating the practical potential of our method.},
+ arxiv_url = {https://arxiv.org/pdf/2209.09476v1.pdf},
+ author = {Zifeng Wang and Zheng Zhan and Yifan Gong and Geng Yuan and Wei Niu and Tong Jian and Bin Ren and Stratis Ioannidis and Yanzhi Wang and Jennifer Dy},
+ title = {SparCL: Sparse Continual Learning on the Edge},
+ year = {2022}
+}
+
+% ===========================================
+% REFERENCE CANDIDATES
+% Additional reference papers for context
+% ===========================================
+
+@article{aljundi-2018-task,
+ abstract = {Methods proposed in the literature towards continual deep learning typically
+operate in a task-based sequential learning setup. A sequence of tasks is
+learned, one at a time, with all data of current task available but not of
+previous or future tasks. Task boundaries and identities are known at all
+times. This setup, however, is rarely encountered in practical applications.
+Therefore we investigate how to transform continual learning to an online
+setup. We develop a system that keeps on learning over time in a streaming
+fashion, with data distributions gradually changing and without the notion of
+separate tasks. To this end, we build on the work on Memory Aware Synapses, and
+show how this method can be made online by providing a protocol to decide i)
+when to update the importance weights, ii) which data to use to update them,
+and iii) how to accumulate the importance weights at each update step.
+Experimental results show the validity of the approach in the context of two
+applications: (self-)supervised learning of a face recognition model by
+watching soap series and learning a robot to avoid collisions.},
+ arxiv_url = {https://arxiv.org/pdf/1812.03596v3.pdf},
+ author = {Rahaf Aljundi and Klaas Kelchtermans and Tinne Tuytelaars},
+ title = {Task-free continual learning},
+ year = {2018}
+}
+
+@article{aljundi-2019-gradient,
+ abstract = {A continual learning agent learns online with a non-stationary and
+never-ending stream of data. The key to such learning process is to overcome
+the catastrophic forgetting of previously seen data, which is a well known
+problem of neural networks. To prevent forgetting, a replay buffer is usually
+employed to store the previous data for the purpose of rehearsal. Previous
+works often depend on task boundary and i.i.d. assumptions to properly select
+samples for the replay buffer. In this work, we formulate sample selection as a
+constraint reduction problem based on the constrained optimization view of
+continual learning. The goal is to select a fixed subset of constraints that
+best approximate the feasible region defined by the original constraints. We
+show that it is equivalent to maximizing the diversity of samples in the replay
+buffer with parameters gradient as the feature. We further develop a greedy
+alternative that is cheap and efficient. The advantage of the proposed method
+is demonstrated by comparing to other alternatives under the continual learning
+setting. Further comparisons are made against state of the art methods that
+rely on task boundaries which show comparable or even better results for our
+method.},
+ arxiv_url = {https://arxiv.org/pdf/1903.08671v5.pdf},
+ author = {Rahaf Aljundi and Min Lin and Baptiste Goujaud and Yoshua Bengio},
+ title = {Gradient based sample selection for online continual learning},
+ year = {2019}
+}
+
+@article{aljundi-2019-online,
+ abstract = {Continual learning, the setting where a learning agent is faced with a never
+ending stream of data, continues to be a great challenge for modern machine
+learning systems. In particular the online or "single-pass through the data"
+setting has gained attention recently as a natural setting that is difficult to
+tackle. Methods based on replay, either generative or from a stored memory,
+have been shown to be effective approaches for continual learning, matching or
+exceeding the state of the art in a number of standard benchmarks. These
+approaches typically rely on randomly selecting samples from the replay memory
+or from a generative model, which is suboptimal. In this work, we consider a
+controlled sampling of memories for replay. We retrieve the samples which are
+most interfered, i.e. whose prediction will be most negatively impacted by the
+foreseen parameters update. We show a formulation for this sampling criterion
+in both the generative replay and the experience replay setting, producing
+consistent gains in performance and greatly reduced forgetting. We release an
+implementation of our method at
+https://github.com/optimass/Maximally_Interfered_Retrieval.},
+ arxiv_url = {https://arxiv.org/pdf/1908.04742v3.pdf},
+ author = {Rahaf Aljundi and Lucas Caccia and Eugene Belilovsky and Massimo Caccia and Min Lin and Laurent Charlin and Tinne Tuytelaars},
+ journal = {NeurIPS 2019},
+ title = {Online continual learning with maximal interfered retrieval},
+ year = {2019}
+}
+
+@article{author-year-gradient,
+ title = {Gradient ﬂows: In metric spaces and in the space of probability measures}
+}
+
+@article{author-year-learning,
+ title = {Learning multiple layers of features from tiny images}
+}
+
+@article{author-year-online,
+ title = {Online continual learning from imbalanced data}
+}
+
+@article{author-year-stochastic,
+ title = {Stochastic Processes}
+}
+
+@article{author-year-the,
+ title = {The variational formulation of the fokker–planck equation}
+}
+
+@article{carlini-2016-towards,
+ abstract = {Neural networks provide state-of-the-art results for most machine learning
+tasks. Unfortunately, neural networks are vulnerable to adversarial examples:
+given an input $x$ and any target classification $t$, it is possible to find a
+new input $x'$ that is similar to $x$ but classified as $t$. This makes it
+difficult to apply neural networks in security-critical areas. Defensive
+distillation is a recently proposed approach that can take an arbitrary neural
+network, and increase its robustness, reducing the success rate of current
+attacks' ability to find adversarial examples from $95\%$ to $0.5\%$.
+  In this paper, we demonstrate that defensive distillation does not
+significantly increase the robustness of neural networks by introducing three
+new attack algorithms that are successful on both distilled and undistilled
+neural networks with $100\%$ probability. Our attacks are tailored to three
+distance metrics used previously in the literature, and when compared to
+previous adversarial example generation algorithms, our attacks are often much
+more effective (and never worse). Furthermore, we propose using high-confidence
+adversarial examples in a simple transferability test we show can also be used
+to break defensive distillation. We hope our attacks will be used as a
+benchmark in future defense attempts to create neural networks that resist
+adversarial examples.},
+ arxiv_url = {https://arxiv.org/pdf/1608.04644v2.pdf},
+ author = {Nicholas Carlini and David Wagner},
+ title = {Towards evaluating the robustness of neural networks},
+ year = {2016}
+}
+
+@article{chaudhry-2018-lifelong,
+ abstract = {In lifelong learning, the learner is presented with a sequence of tasks,
+incrementally building a data-driven prior which may be leveraged to speed up
+learning of a new task. In this work, we investigate the efficiency of current
+lifelong approaches, in terms of sample complexity, computational and memory
+cost. Towards this end, we first introduce a new and a more realistic
+evaluation protocol, whereby learners observe each example only once and
+hyper-parameter selection is done on a small and disjoint set of tasks, which
+is not used for the actual learning experience and evaluation. Second, we
+introduce a new metric measuring how quickly a learner acquires a new skill.
+Third, we propose an improved version of GEM (Lopez-Paz & Ranzato, 2017),
+dubbed Averaged GEM (A-GEM), which enjoys the same or even better performance
+as GEM, while being almost as computationally and memory efficient as EWC
+(Kirkpatrick et al., 2016) and other regularization-based methods. Finally, we
+show that all algorithms including A-GEM can learn even more quickly if they
+are provided with task descriptors specifying the classification tasks under
+consideration. Our experiments on several standard lifelong learning benchmarks
+demonstrate that A-GEM has the best trade-off between accuracy and efficiency.},
+ arxiv_url = {https://arxiv.org/pdf/1812.00420v2.pdf},
+ author = {Arslan Chaudhry and Marc'Aurelio Ranzato and Marcus Rohrbach and Mohamed Elhoseiny},
+ title = {Efﬁcient lifelong learning with a-gem},
+ year = {2018}
+}
+
+@article{chaudhry-2019-continual,
+ abstract = {In continual learning (CL), an agent learns from a stream of tasks leveraging
+prior experience to transfer knowledge to future tasks. It is an ideal
+framework to decrease the amount of supervision in the existing learning
+algorithms. But for a successful knowledge transfer, the learner needs to
+remember how to perform previous tasks. One way to endow the learner the
+ability to perform tasks seen in the past is to store a small memory, dubbed
+episodic memory, that stores few examples from previous tasks and then to
+replay these examples when training for future tasks. In this work, we
+empirically analyze the effectiveness of a very small episodic memory in a CL
+setup where each training example is only seen once. Surprisingly, across four
+rather different supervised learning benchmarks adapted to CL, a very simple
+baseline, that jointly trains on both examples from the current task as well as
+examples stored in the episodic memory, significantly outperforms specifically
+designed CL approaches with and without episodic memory. Interestingly, we find
+that repetitive training on even tiny memories of past tasks does not harm
+generalization, on the contrary, it improves it, with gains between 7\% and
+17\% when the memory is populated with a single example per class.},
+ arxiv_url = {https://arxiv.org/pdf/1902.10486v4.pdf},
+ author = {Arslan Chaudhry and Marcus Rohrbach and Mohamed Elhoseiny and Thalaiyasingam Ajanthan and Puneet K. Dokania and Philip H. S. Torr and Marc'Aurelio Ranzato},
+ title = {Continual learning with tiny episodic memories},
+ year = {2019}
+}
+
+@article{chen-2014-stochastic,
+ abstract = {Hamiltonian Monte Carlo (HMC) sampling methods provide a mechanism for
+defining distant proposals with high acceptance probabilities in a
+Metropolis-Hastings framework, enabling more efficient exploration of the state
+space than standard random-walk proposals. The popularity of such methods has
+grown significantly in recent years. However, a limitation of HMC methods is
+the required gradient computation for simulation of the Hamiltonian dynamical
+system-such computation is infeasible in problems involving a large sample size
+or streaming data. Instead, we must rely on a noisy gradient estimate computed
+from a subset of the data. In this paper, we explore the properties of such a
+stochastic gradient HMC approach. Surprisingly, the natural implementation of
+the stochastic approximation can be arbitrarily bad. To address this problem we
+introduce a variant that uses second-order Langevin dynamics with a friction
+term that counteracts the effects of the noisy gradient, maintaining the
+desired target distribution as the invariant distribution. Results on simulated
+data validate our theory. We also provide an application of our methods to a
+classification task using neural networks and to online Bayesian matrix
+factorization.},
+ arxiv_url = {https://arxiv.org/pdf/1402.4102v2.pdf},
+ author = {Tianqi Chen and Emily B. Fox and Carlos Guestrin},
+ title = {Stochastic gradient hamiltonian monte carlo},
+ year = {2014}
+}
+
+@article{chewi-2020-svgd,
+ abstract = {Stein Variational Gradient Descent (SVGD), a popular sampling algorithm, is
+often described as the kernelized gradient flow for the Kullback-Leibler
+divergence in the geometry of optimal transport. We introduce a new perspective
+on SVGD that instead views SVGD as the (kernelized) gradient flow of the
+chi-squared divergence which, we show, exhibits a strong form of uniform
+exponential ergodicity under conditions as weak as a Poincar\'e inequality.
+This perspective leads us to propose an alternative to SVGD, called Laplacian
+Adjusted Wasserstein Gradient Descent (LAWGD), that can be implemented from the
+spectral decomposition of the Laplacian operator associated with the target
+density. We show that LAWGD exhibits strong convergence guarantees and good
+practical performance.},
+ arxiv_url = {https://arxiv.org/pdf/2006.02509v1.pdf},
+ author = {Sinho Chewi and Thibaut Le Gouic and Chen Lu and Tyler Maunu and Philippe Rigollet},
+ title = {Svgd as a kernelized wasserstein gradient ﬂow of the chi-squared divergence},
+ year = {2020}
+}
+
+@article{he-2019-task,
+ abstract = {While neural networks are powerful function approximators, they suffer from
+catastrophic forgetting when the data distribution is not stationary. One
+particular formalism that studies learning under non-stationary distribution is
+provided by continual learning, where the non-stationarity is imposed by a
+sequence of distinct tasks. Most methods in this space assume, however, the
+knowledge of task boundaries, and focus on alleviating catastrophic forgetting.
+In this work, we depart from this view and move the focus towards faster
+remembering -- i.e measuring how quickly the network recovers performance
+rather than measuring the network's performance without any adaptation. We
+argue that in many settings this can be more effective and that it opens the
+door to combining meta-learning and continual learning techniques, leveraging
+their complementary advantages. We propose a framework specific for the
+scenario where no information about task boundaries or task identity is given.
+It relies on a separation of concerns into what task is being solved and how
+the task should be solved. This framework is implemented by differentiating
+task specific parameters from task agnostic parameters, where the latter are
+optimized in a continual meta learning fashion, without access to multiple
+tasks at the same time. We showcase this framework in a supervised learning
+scenario and discuss the implication of the proposed formalism.},
+ arxiv_url = {https://arxiv.org/pdf/1906.05201v1.pdf},
+ author = {Xu He and Jakub Sygnowski and Alexandre Galashov and Andrei A. Rusu and Yee Whye Teh and Razvan Pascanu},
+ title = {Task agnostic continual learning via meta learning},
+ year = {2019}
+}
+
+@article{jin-2020-gradient,
+ abstract = {We explore task-free continual learning (CL), in which a model is trained to
+avoid catastrophic forgetting in the absence of explicit task boundaries or
+identities. Among many efforts on task-free CL, a notable family of approaches
+are memory-based that store and replay a subset of training examples. However,
+the utility of stored seen examples may diminish over time since CL models are
+continually updated. Here, we propose Gradient based Memory EDiting (GMED), a
+framework for editing stored examples in continuous input space via gradient
+updates, in order to create more "challenging" examples for replay. GMED-edited
+examples remain similar to their unedited forms, but can yield increased loss
+in the upcoming model updates, thereby making the future replays more effective
+in overcoming catastrophic forgetting. By construction, GMED can be seamlessly
+applied in conjunction with other memory-based CL algorithms to bring further
+improvement. Experiments validate the effectiveness of GMED, and our best
+method significantly outperforms baselines and previous state-of-the-art on
+five out of six datasets. Code can be found at https://github.com/INK-USC/GMED.},
+ arxiv_url = {https://arxiv.org/pdf/2006.15294v3.pdf},
+ author = {Xisen Jin and Arka Sadhu and Junyi Du and Xiang Ren},
+ title = {Gradient-based edit-ing of memory examples for online task-free continual learning},
+ year = {2020}
+}
+
+@article{kirkpatrick-2016-overcoming,
+ abstract = {The ability to learn tasks in a sequential fashion is crucial to the
+development of artificial intelligence. Neural networks are not, in general,
+capable of this and it has been widely thought that catastrophic forgetting is
+an inevitable feature of connectionist models. We show that it is possible to
+overcome this limitation and train networks that can maintain expertise on
+tasks which they have not experienced for a long time. Our approach remembers
+old tasks by selectively slowing down learning on the weights important for
+those tasks. We demonstrate our approach is scalable and effective by solving a
+set of classification tasks based on the MNIST hand written digit dataset and
+by learning several Atari 2600 games sequentially.},
+ arxiv_url = {https://arxiv.org/pdf/1612.00796v2.pdf},
+ author = {James Kirkpatrick and Razvan Pascanu and Neil Rabinowitz and Joel Veness and Guillaume Desjardins and Andrei A. Rusu and Kieran Milan and John Quan and Tiago Ramalho and Agnieszka Grabska-Barwinska and Demis Hassabis and Claudia Clopath and Dharshan Kumaran and Raia Hadsell},
+ doi = {10.1073/pnas.1611835114},
+ title = {Overcoming catastrophic forgetting in neural networks},
+ year = {2016}
+}
+
+@article{lee-2020-neural,
+ abstract = {Despite the growing interest in continual learning, most of its contemporary
+works have been studied in a rather restricted setting where tasks are clearly
+distinguishable, and task boundaries are known during training. However, if our
+goal is to develop an algorithm that learns as humans do, this setting is far
+from realistic, and it is essential to develop a methodology that works in a
+task-free manner. Meanwhile, among several branches of continual learning,
+expansion-based methods have the advantage of eliminating catastrophic
+forgetting by allocating new resources to learn new data. In this work, we
+propose an expansion-based approach for task-free continual learning. Our
+model, named Continual Neural Dirichlet Process Mixture (CN-DPM), consists of a
+set of neural network experts that are in charge of a subset of the data.
+CN-DPM expands the number of experts in a principled way under the Bayesian
+nonparametric framework. With extensive experiments, we show that our model
+successfully performs task-free continual learning for both discriminative and
+generative tasks such as image classification and image generation.},
+ arxiv_url = {https://arxiv.org/pdf/2001.00689v2.pdf},
+ author = {Soochan Lee and Junsoo Ha and Dongsu Zhang and Gunhee Kim},
+ title = {A neural dirichlet process mixture model for task-free continual learning},
+ year = {2020}
+}
+
+@article{liu-2017-stein,
+ abstract = {Stein variational gradient descent (SVGD) is a deterministic sampling
+algorithm that iteratively transports a set of particles to approximate given
+distributions, based on an efficient gradient-based update that guarantees to
+optimally decrease the KL divergence within a function space. This paper
+develops the first theoretical analysis on SVGD, discussing its weak
+convergence properties and showing that its asymptotic behavior is captured by
+a gradient flow of the KL divergence functional under a new metric structure
+induced by Stein operator. We also provide a number of results on Stein
+operator and Stein's identity using the notion of weak derivative, including a
+new proof of the distinguishability of Stein discrepancy under weak conditions.},
+ arxiv_url = {https://arxiv.org/pdf/1704.07520v2.pdf},
+ author = {Qiang Liu},
+ title = {Stein variational gradient descent as gradient ﬂow},
+ year = {2017}
+}
+
+@article{liu-2019-understanding,
+ abstract = {It is known that the Langevin dynamics used in MCMC is the gradient flow of
+the KL divergence on the Wasserstein space, which helps convergence analysis
+and inspires recent particle-based variational inference methods (ParVIs). But
+no more MCMC dynamics is understood in this way. In this work, by developing
+novel concepts, we propose a theoretical framework that recognizes a general
+MCMC dynamics as the fiber-gradient Hamiltonian flow on the Wasserstein space
+of a fiber-Riemannian Poisson manifold. The "conservation + convergence"
+structure of the flow gives a clear picture on the behavior of general MCMC
+dynamics. The framework also enables ParVI simulation of MCMC dynamics, which
+enriches the ParVI family with more efficient dynamics, and also adapts ParVI
+advantages to MCMCs. We develop two ParVI methods for a particular MCMC
+dynamics and demonstrate the benefits in experiments.},
+ arxiv_url = {https://arxiv.org/pdf/1902.00282v3.pdf},
+ author = {Chang Liu and Jingwei Zhuo and Jun Zhu},
+ title = {Understanding mcmc dynam-ics as ﬂows on the wasserstein spac},
+ year = {2019}
+}
+
+@article{vorontsova-2021-convex,
+ abstract = {This textbook is based on lectures given by the authors at MIPT (Moscow), HSE
+(Moscow), FEFU (Vladivostok), V.I. Vernadsky KFU (Simferopol), ASU (Republic of
+Adygea), and the University of Grenoble-Alpes (Grenoble, France). First of all,
+the authors focused on the program of a two-semester course of lectures on
+convex optimization, which is given to students of MIPT. The first chapter of
+this book contains the materials of the first semester ("Fundamentals of convex
+analysis and optimization"), the second and third chapters contain the
+materials of the second semester ("Numerical methods of convex optimization").
+  The textbook has a number of features. First, in contrast to the classic
+manuals, this book does not provide proofs of all the theorems mentioned. This
+allowed, on one side, to describe more themes, but on the other side, made the
+presentation less self-sufficient. The second important point is that part of
+the material is advanced and is published in the Russian educational
+literature, apparently for the first time. Third, the accents that are given do
+not always coincide with the generally accepted accents in the textbooks that
+are now popular. First of all, we talk about a sufficiently advanced
+presentation of conic optimization, including robust optimization, as a vivid
+demonstration of the capabilities of modern convex analysis.},
+ arxiv_url = {https://arxiv.org/pdf/2106.01946v4.pdf},
+ author = {Evgeniya Vorontsova and Roland Hildebrand and Alexander Gasnikov and Fedor Stonyakin},
+ title = {Convex optimization},
+ year = {2021}
+}
