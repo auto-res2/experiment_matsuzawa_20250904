@@ -7,7 +7,7 @@ Evaluation utilities (plots, metrics post-processing, …).
 
 All experiment figures *must* be stored under the path dictated by the
 assignment instructions:
-    .research/iteration4/images
+    .research/iteration6/images
 Regardless of the output directory requested by the caller we therefore
 override the destination to comply with that requirement.
 """
@@ -27,7 +27,7 @@ import seaborn as sns  # noqa: E402
 # -----------------------------------------------------------------------------
 
 # Centralised location where *all* figures will be saved.
-_IMGS_DIR = Path(".research/iteration4/images")
+_IMGS_DIR = Path(".research/iteration6/images")
 
 
 def _prepare_dir() -> None:
@@ -35,7 +35,9 @@ def _prepare_dir() -> None:
     _IMGS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def accuracy_memory_curve(df: pd.DataFrame, _ignored_outdir: str | Path | None = None) -> None:
+def accuracy_memory_curve(
+    df: pd.DataFrame, _ignored_outdir: str | Path | None = None
+) -> None:
     """Line plot: Average Accuracy (%) vs buffer memory budget (MB).
 
     The input dataframe must contain columns: `method`, `mem_mb`, `AA`.
