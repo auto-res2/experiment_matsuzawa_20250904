@@ -1,16 +1,18 @@
-name: curvamp_exp1
+experiment: default-exp
 datasets:
-  - Path-of-Cliques
-  - Ring-of-Cliques
+- Path-of-Cliques
+- Ring-of-Cliques
+models:
+- GCN
+- PairNorm
+- CurvAMP
 depth: 32
 hidden: 128
-K: 3
-rewire_ratio: 0.02
-lambda_c: 0.1
 lr: 0.0005
-epochs: 400
+wd: 0.0005
 patience: 100
+max_epochs: 400
 seeds:
-  - 0
-  - 1
-  - 2
+- 0
+- 1
+- 2

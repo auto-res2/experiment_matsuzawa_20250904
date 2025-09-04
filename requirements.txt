@@ -1,10 +1,9 @@
---extra-index-url https://data.pyg.org/whl/torch-2.2.0+cpu.html
-
-torch==2.2.0
-torch_geometric==2.5.2
-# Pin NumPy to <2 to avoid ABI incompatibilities with pre-built extensions
-numpy<2.0
-scipy
+torch
+torch_geometric
+torch_scatter
+torch_sparse
 networkx
 matplotlib
 pyyaml
+numpy
+scipy

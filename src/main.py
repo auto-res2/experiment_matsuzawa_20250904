@@ -1,83 +1,96 @@
+"""
+src/main.py – single entry-point (run:  python -m src.main )
+"""
 from __future__ import annotations
 
-import random
+import argparse
 from pathlib import Path
-from typing import Dict, Any, List
 
-import numpy as np
 import torch
 import yaml
 
+from .evaluate import eval_full
 from .preprocess import load_dataset
-from .train import train_model
-from .evaluate import evaluate_model
+from .train import MODELS, gradient_check, set_seeds, train_one
 
 # -----------------------------------------------------------------------------
-#  Configuration handling
-# -----------------------------------------------------------------------------
-_CFG_PATH = Path("config/config.yaml")
-
-
-def _write_default_cfg() -> None:
-    if _CFG_PATH.exists():
-        return
-    _CFG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    cfg = {
-        "name": "curvamp_exp1",
-        "datasets": ["Path-of-Cliques", "Ring-of-Cliques"],
-        "depth": 32,
-        "hidden": 128,
-        "K": 3,
-        "rewire_ratio": 0.02,
-        "lambda_c": 0.1,
-        "lr": 5e-4,
-        "epochs": 400,
-        "patience": 100,
-        "seeds": [0, 1, 2],
-    }
-    yaml.safe_dump(cfg, _CFG_PATH.open("w"))
-
-
-# -----------------------------------------------------------------------------
-#  Main driver
+# Config handling
 # -----------------------------------------------------------------------------
 
-def _set_seeds(seed: int):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+CFG_DIR = Path("config")
+CFG_PATH = CFG_DIR / "config.yaml"
+CFG_DIR.mkdir(exist_ok=True)
 
-
-def main():
-    _write_default_cfg()
-    cfg: Dict[str, Any] = yaml.safe_load(_CFG_PATH.read_text())
-    print("\n===== CurvAMP EXPERIMENT –", cfg["name"], "=====")
-    print(yaml.safe_dump(cfg))
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if torch.cuda.is_available():  # type: ignore[attr-defined]
-        torch.backends.cudnn.benchmark = True  # type: ignore[attr-defined]
-
-    for dset_name in cfg["datasets"]:
-        print(f"\n--- Dataset: {dset_name} ---")
-        data = load_dataset(dset_name).to(device)
-        data.name = dset_name  # for nice figure names
-
-        accs: List[float] = []
-        for seed in cfg["seeds"]:
-            _set_seeds(seed)
-            model, _ = train_model(data, cfg, device)
-            model.eval()
-            with torch.no_grad():
-                logits, feats = model(data)
-            result = evaluate_model(model, data, feats)
-            accs.append(result["acc"])
-
-        print(
-            f"Test accuracy mean±std: {np.mean(accs):.3f} ± {np.std(accs):.3f}\nFigures saved in .research/iteration9/images."
+# Write a minimal default config if none is present so the repo is runnable
+if not CFG_PATH.exists():
+    CFG_PATH.write_text(
+        yaml.safe_dump(
+            {
+                "experiment": "default-exp",
+                "datasets": ["Path-of-Cliques", "Ring-of-Cliques"],
+                "models": ["GCN", "PairNorm", "CurvAMP"],
+                "depth": 32,
+                "hidden": 128,
+                "lr": 5e-4,
+                "wd": 5e-4,
+                "patience": 100,
+                "max_epochs": 400,
+                "seeds": [0, 1, 2],
+            }
         )
+    )
+
+# -----------------------------------------------------------------------------
+
+
+def main() -> None:
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA GPU mandatory – aborting (consistency item F).")
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cfg", default=str(CFG_PATH), help="Path to YAML config file")
+    args = parser.parse_args()
+
+    cfg = yaml.safe_load(open(args.cfg))
+    print("===== Experiment description =====\n", yaml.safe_dump(cfg, sort_keys=False))
+
+    for dataset_name in cfg["datasets"]:
+        for model_name in cfg["models"]:
+            for seed in cfg["seeds"]:
+                print(f"\n>>> {dataset_name} – {model_name} – seed {seed}")
+                set_seeds(seed)
+                data = load_dataset(dataset_name, seed)
+
+                ModelCls = MODELS[model_name]
+                if model_name == "CurvAMP":
+                    model = ModelCls(
+                        data.num_features,
+                        cfg["hidden"],
+                        int(data.y.max().item() + 1),
+                        cfg["depth"],
+                        K=3,
+                        rewired_ratio=0.02,
+                    )
+                else:
+                    model = ModelCls(
+                        data.num_features,
+                        cfg["hidden"],
+                        int(data.y.max().item() + 1),
+                        cfg["depth"],
+                        dropout=0.2,
+                    )
+
+                # Quick gradient sanity check before expensive training
+                gradient_check(model, data)
+
+                model, best_val = train_one(model, data, cfg, torch.device("cuda"))
+                results = eval_full(model, data, f"{dataset_name}_{model_name}_seed{seed}")
+
+                print(f"Acc={results['acc']:.4f}  ATER={results['ater']:.4f}")
+                print(
+                    f"Figures saved: gdr_{dataset_name}_{model_name}_seed{seed}.pdf, "
+                    f"er_{dataset_name}_{model_name}_seed{seed}.pdf"
+                )
 
 
 if __name__ == "__main__":

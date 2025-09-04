@@ -1,98 +1,86 @@
-# Updated preprocess.py – dataset loading & synthetic graph helpers
+"""
+src/preprocess.py – dataset loading & synthetic generators
+"""
 from __future__ import annotations
 
+import random
 from pathlib import Path
-from typing import Any
+from typing import Tuple
 
 import networkx as nx
 import torch
+from torch_geometric.data import Data
+from torch_geometric.datasets import LRGB, Planetoid, WebKB
 from torch_geometric.utils import from_networkx
 
 # -----------------------------------------------------------------------------
-#  Synthetic graphs used for fast verification
+# Synthetic clique-based graphs (Path-of-Cliques, Ring-of-Cliques, Mixture)
 # -----------------------------------------------------------------------------
 
 
-def _ring_of_cliques() -> Any:
-    g = nx.ring_of_cliques(30, 10)
-    for v in g.nodes():
-        g.nodes[v]["x"] = torch.nn.functional.one_hot(torch.tensor(v % 10), 10).float()
-        g.nodes[v]["y"] = v // 10
+def _gen_clique_graph(kind: str, n_cliques: int = 30, clique_size: int = 10) -> Data:
+    if kind == "poc":
+        g = nx.connected_caveman_graph(n_cliques, clique_size)  # path-of-cliques
+    elif kind == "roc":
+        g = nx.ring_of_cliques(n_cliques, clique_size)  # ring-of-cliques
+    else:
+        raise ValueError(f"Unknown kind {kind}")
+
+    # Node features = slightly noised one-hot inside each clique
+    for v in g.nodes:
+        base = torch.zeros(clique_size)
+        base[v % clique_size] = 1.0
+        g.nodes[v]["x"] = (base + 0.01 * torch.randn_like(base)).float()
+        g.nodes[v]["y"] = v // clique_size
     return from_networkx(g)
 
 
-def _path_of_cliques() -> Any:
-    g = nx.connected_caveman_graph(30, 10)
-    for v in g.nodes():
-        g.nodes[v]["x"] = torch.nn.functional.one_hot(torch.tensor(v % 10), 10).float()
-        g.nodes[v]["y"] = v // 10
-    return from_networkx(g)
-
-
-def synthetic_graph(name: str):
+def _get_synthetic(name: str) -> Data:
     if name == "Path-of-Cliques":
-        return _path_of_cliques()
+        return _gen_clique_graph("poc")
     if name == "Ring-of-Cliques":
-        return _ring_of_cliques()
-    raise KeyError(f"Unknown synthetic graph '{name}'")
+        return _gen_clique_graph("roc")
+    if name == "Mixture":
+        poc = _gen_clique_graph("poc")
+        roc = _gen_clique_graph("roc")
+        roc.edge_index += poc.num_nodes
+        data = Data(
+            x=torch.cat([poc.x, roc.x]),
+            edge_index=torch.cat([poc.edge_index, roc.edge_index], dim=1),
+            y=torch.cat([poc.y, roc.y]),
+        )
+        return data
+    raise KeyError(name)
 
 
 # -----------------------------------------------------------------------------
-#  Public loader (real + synthetic)
+# Public loader – downloads real datasets on-the-fly if needed
 # -----------------------------------------------------------------------------
 
-
-def _add_masks(data, train_ratio: float = 0.6, val_ratio: float = 0.2, seed: int = 0):
-    """Creates boolean train/val/test masks if they are absent."""
-    if getattr(data, "train_mask", None) is not None:
-        return data  # already present
-
-    torch.manual_seed(seed)
-    N = data.num_nodes
-    idx = torch.randperm(N)
-    n_train = int(train_ratio * N)
-    n_val = int(val_ratio * N)
-    train_idx = idx[:n_train]
-    val_idx = idx[n_train : n_train + n_val]
-    test_idx = idx[n_train + n_val :]
-
-    data.train_mask = torch.zeros(N, dtype=torch.bool)
-    data.val_mask = torch.zeros(N, dtype=torch.bool)
-    data.test_mask = torch.zeros(N, dtype=torch.bool)
-
-    data.train_mask[train_idx] = True
-    data.val_mask[val_idx] = True
-    data.test_mask[test_idx] = True
-    return data
-
-
-def load_dataset(name: str):
-    """Loads either a real benchmark dataset (if requested) or one of the built-in
-    synthetic graphs.  Heavy libraries such as torch_sparse / torch_scatter are
-    intentionally avoided; hence, the real datasets are imported lazily only
-    when necessary.
-    """
-
-    # --- real datasets -------------------------------------------------------
-    if name in {"Cora", "CiteSeer", "PubMed"}:
-        from torch_geometric.datasets import Planetoid  # lazy import
-
-        data = Planetoid(root=f"data/{name}", name=name)[0]
-        return _add_masks(data)
-
-    if name in {"Texas", "Cornell", "Wisconsin"}:
-        from torch_geometric.datasets import WebKB  # lazy import
-
-        data = WebKB(root=f"data/{name}", name=name)[0]
-        return _add_masks(data)
-
-    if name in {"Peptides-func", "Peptides-struct", "PCQM-Contact"}:
-        from torch_geometric.datasets import LRGB  # lazy import
-
-        key = name.replace("-", "")
+def load_dataset(name: str, split_seed: int = 0):
+    if name in {"Path-of-Cliques", "Ring-of-Cliques", "Mixture"}:
+        data = _get_synthetic(name)
+    elif name in {"Cora", "CiteSeer", "PubMed"}:
+        data = Planetoid(root="data/" + name, name=name)[0]
+    elif name in {"Texas", "Cornell", "Wisconsin"}:
+        data = WebKB(root="data/" + name, name=name)[0]
+    elif name in {"Peptides-func", "Peptides-struct", "PCQM-Contact"}:
+        key = name.replace("-", "")  # LRGB naming quirk
         data = LRGB(root="data/LRGB", name=key)[0]
-        return _add_masks(data)
+    else:
+        raise KeyError(f"Unknown dataset {name}")
 
-    # --- synthetic fallback --------------------------------------------------
-    data = synthetic_graph(name)
-    return _add_masks(data)
+    # Split masks -----------------------------------------------------------
+    torch.manual_seed(split_seed)
+    if getattr(data, "train_mask", None) is None:
+        n = data.num_nodes
+        perm = torch.randperm(n)
+        tr, va = int(0.6 * n), int(0.2 * n)
+        train_idx, val_idx, test_idx = perm[:tr], perm[tr : tr + va], perm[tr + va :]
+        data.train_mask = torch.zeros(n, dtype=torch.bool)
+        data.val_mask = torch.zeros(n, dtype=torch.bool)
+        data.test_mask = torch.zeros(n, dtype=torch.bool)
+        data.train_mask[train_idx] = True
+        data.val_mask[val_idx] = True
+        data.test_mask[test_idx] = True
+    return data
