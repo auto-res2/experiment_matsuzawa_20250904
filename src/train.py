@@ -24,7 +24,8 @@ if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = False
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-AMP_SCALER = GradScaler()
+# GradScaler that is safely disabled when CUDA is not available
+AMP_SCALER = GradScaler(enabled=torch.cuda.is_available())
 
 # ---------------------------------------------------------
 #  MODEL COMPONENTS
@@ -63,12 +64,19 @@ class HCFReplayModel(nn.Module):
 
     def __init__(self, img_size: int, n_classes: int):
         super().__init__()
-        from torchvision import models as tvm  # local import to avoid heavy load for non-training scripts
+        # Local import to keep non-training scripts light
+        from torchvision import models as tvm
 
+        # -------------------------------------------------
+        # IMPORTANT: Avoid downloading ImageNet pretrained weights.
+        # Setting `weights=None` initialises the model randomly and
+        # prevents any network access, which is crucial in the
+        # execution environment that is fully offline.
+        # -------------------------------------------------
         if img_size <= 84:
-            self.encoder = tvm.resnet18(weights=tvm.ResNet18_Weights.IMAGENET1K_V1)
+            self.encoder = tvm.resnet18(weights=None)
         else:
-            self.encoder = tvm.resnet34(weights=tvm.ResNet34_Weights.IMAGENET1K_V1)
+            self.encoder = tvm.resnet34(weights=None)
 
         # Remove classifier head
         self.encoder.fc = nn.Identity()
@@ -91,7 +99,8 @@ class PQMemory:
     """Hierarchical Product Quantisation memory that stores ultra-compact codes."""
 
     def __init__(self, M: int = 8, Ks: int = 16, budget_kb: float = 1.0):
-        import nanopq  # heavy, so import inside
+        # Import locally as the package is heavy and compiled
+        import nanopq  # pylint: disable=import-error
 
         self.M = M
         self.Ks = Ks
@@ -160,7 +169,7 @@ def train_one_task(
     """One-task training with optional feature-level replay."""
 
     model.train()
-    mixed_precision = config["global"].get("mixed_precision", True)
+    mixed_precision = config["global"].get("mixed_precision", True) and torch.cuda.is_available()
     clip_grad = float(config["global"].get("clip_grad", 5.0))
 
     for _ in range(epoch):

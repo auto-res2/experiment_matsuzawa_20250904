@@ -1,8 +1,17 @@
-torch>=1.13.0,<2.0.0
-torchvision>=0.14.0,<0.16.0
+torch==1.13.1
+# TorchVision 0.14.x is the last version compatible with Torch 1.13.x
+# Pinning both packages removes the previous dependency conflict where
+# torchvision 0.15+ required torch 2.x.
+torchvision==0.14.1
+
 numpy>=1.21.0
 matplotlib>=3.5.0
+
+# Exact version for reproducibility – pure-python implementation.
 nanopq==0.2.2
+
+# fvcore brings in several utility deps (yacs, iopath, etc.)
 fvcore==0.1.5.post20221221
+
 torchattacks==3.5.1
 pyyaml>=6.0

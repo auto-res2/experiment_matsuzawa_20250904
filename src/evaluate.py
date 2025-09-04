@@ -9,8 +9,10 @@ import torch
 
 from .train import DEVICE  # reuse the same device constant
 
-# Create directory for figures once
-_IMG_DIR = Path(".research/iteration1/images")
+# ---------------------------------------------------------
+#  FIGURE OUTPUT DIRECTORY – MUST MATCH SPECIFICATION
+# ---------------------------------------------------------
+_IMG_DIR = Path(".research/iteration2/images")
 _IMG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------
