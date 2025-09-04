@@ -1,0 +1,4 @@
+=== pip install start Thu Sep  4 06:27:08 UTC 2025 ===
+Collecting torch==1.13.1 (from -r requirements.txt (line 1))
+  Using cached torch-1.13.1-cp311-cp311-manylinux1_x86_64.whl.metadata (24 kB)
+=== experiment start Thu Sep  4 06:27:08 UTC 2025 ===
