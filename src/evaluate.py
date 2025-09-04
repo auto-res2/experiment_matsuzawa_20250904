@@ -13,7 +13,7 @@ import torch
 import torch.nn.functional as F  # only used indirectly for type clarity
 
 # All generated figures go into the mandated directory
-_FIG_DIR = Path(".research/iteration12/images")
+_FIG_DIR = Path(".research/iteration14/images")
 _FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # -----------------------------------------------------------------------------
@@ -29,7 +29,8 @@ def eff_rank(z: torch.Tensor) -> float:
     _, s, _ = torch.linalg.svd(z, full_matrices=False)
     p = (s / s.sum()).clamp_min(1e-9)
     h = -(p * p.log()).sum()
-    return math.exp(h).item() / z.size(1)
+    # Use torch.exp to stay inside the Tensor API – avoids `.item()` on a Python float
+    return torch.exp(h).item() / z.size(1)
 
 
 def gdr(z: torch.Tensor, y: torch.Tensor) -> float:
