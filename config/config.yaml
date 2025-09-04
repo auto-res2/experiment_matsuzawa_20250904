@@ -1,0 +1,26 @@
+# config/config.yaml – central place for all high-level hyper-parameters
+# Feel free to tweak values here; no code changes required.
+
+seeds: [11, 13, 17, 19, 23]
+
+# Memory budgets used in the paper (string key → bytes)
+memory_budgets:
+  0.5MB: 524288
+  1MB: 1048576
+  2MB: 2097152
+
+# Dataset / continual-learning protocol
+dataset: split_cifar100
+n_tasks: 10
+classes_per_task: 10
+
+epochs: 10
+batch_size: 128
+
+# Optimiser hyper-parameters
+learning_rate: 0.1
+momentum: 0.9
+weight_decay: 0.0005
+
+# JPEG quality for the JPEG-ER baseline
+jpeg_quality: 35
