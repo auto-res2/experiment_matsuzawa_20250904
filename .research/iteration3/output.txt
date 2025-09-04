@@ -1,0 +1,46 @@
+=== pip install start Thu Sep  4 06:28:53 UTC 2025 ===
+Collecting torch==1.13.1 (from -r requirements.txt (line 1))
+  Using cached torch-1.13.1-cp311-cp311-manylinux1_x86_64.whl.metadata (24 kB)
+Collecting torchvision==0.15.1 (from -r requirements.txt (line 5))
+  Using cached torchvision-0.15.1-cp311-cp311-manylinux1_x86_64.whl.metadata (11 kB)
+Collecting numpy>=1.21.0 (from -r requirements.txt (line 7))
+  Using cached numpy-2.3.2-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (62 kB)
+Collecting matplotlib>=3.5.0 (from -r requirements.txt (line 8))
+  Using cached matplotlib-3.10.6-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (11 kB)
+Collecting nanopq==0.2.2 (from -r requirements.txt (line 11))
+  Using cached nanopq-0.2.2-py3-none-any.whl.metadata (4.6 kB)
+Collecting fvcore==0.1.5.post20221221 (from -r requirements.txt (line 14))
+  Using cached fvcore-0.1.5.post20221221.tar.gz (50 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting torchattacks==3.5.1 (from -r requirements.txt (line 16))
+  Using cached torchattacks-3.5.1-py3-none-any.whl.metadata (927 bytes)
+Collecting pyyaml>=6.0 (from -r requirements.txt (line 17))
+  Using cached PyYAML-6.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (2.1 kB)
+Collecting typing-extensions (from torch==1.13.1->-r requirements.txt (line 1))
+  Using cached typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting nvidia-cuda-runtime-cu11==11.7.99 (from torch==1.13.1->-r requirements.txt (line 1))
+  Using cached nvidia_cuda_runtime_cu11-11.7.99-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+Collecting nvidia-cudnn-cu11==8.5.0.96 (from torch==1.13.1->-r requirements.txt (line 1))
+  Using cached nvidia_cudnn_cu11-8.5.0.96-2-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+Collecting nvidia-cublas-cu11==11.10.3.66 (from torch==1.13.1->-r requirements.txt (line 1))
+  Using cached nvidia_cublas_cu11-11.10.3.66-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+Collecting nvidia-cuda-nvrtc-cu11==11.7.99 (from torch==1.13.1->-r requirements.txt (line 1))
+  Using cached nvidia_cuda_nvrtc_cu11-11.7.99-2-py3-none-manylinux1_x86_64.whl.metadata (1.5 kB)
+Collecting requests (from torchvision==0.15.1->-r requirements.txt (line 5))
+  Downloading requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+INFO: pip is looking at multiple versions of torchvision to determine which version is compatible with other requirements. This could take a while.
+
+The conflict is caused by:
+    The user requested torch==1.13.1
+    torchvision 0.15.1 depends on torch==2.0.0
+
+To fix this you could try to:
+1. loosen the range of package versions you've specified
+2. remove package versions to allow pip to attempt to solve the dependency conflict
+
+=== experiment start Thu Sep  4 06:28:56 UTC 2025 ===
