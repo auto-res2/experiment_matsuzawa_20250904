@@ -1,0 +1,8 @@
+ERROR: Cannot install -r requirements.txt (line 3) and torch<2.0.0 and >=1.13.0 because these package versions have conflicting dependencies.
+ERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 8, in <module>
+    import torch, yaml, pandas as pd
+ModuleNotFoundError: No module named 'torch'
