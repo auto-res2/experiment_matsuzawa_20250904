@@ -154,8 +154,23 @@ class CPQRBuffer:
 #  STRATEGY FACTORY (wraps Avalanche Replay with CPQR integration)
 # -----------------------------------------------------------------------------
 
-from avalanche.training.strategies import Replay  # heavy import, keep at bottom
-from avalanche.training.plugins import EvaluationPlugin
+# -----------------------------------------------------------------------------
+#  Robust import for the `Replay` strategy and `EvaluationPlugin` across
+#  Avalanche versions.  The package has reorganised its public API a few times
+#  so we fall back to alternative locations when the preferred import fails.
+# -----------------------------------------------------------------------------
+try:
+    from avalanche.training.strategies import Replay  # >=0.7 (old layout)
+except ModuleNotFoundError:  # pragma: no cover – handled at runtime
+    # Newer layout (observed in avalanche-lib v0.6.0+) where strategies are
+    # re-exported directly under `avalanche.training`.
+    from avalanche.training import Replay  # type: ignore
+
+try:
+    from avalanche.training.plugins import EvaluationPlugin
+except ModuleNotFoundError:  # pragma: no cover
+    # Fallback (older versions)
+    from avalanche.evaluation.plugins import EvaluationPlugin  # type: ignore
 
 
 def make_replay_strategy(
@@ -179,13 +194,13 @@ def make_replay_strategy(
             self.cpqr, self.replay_size = cpqr, replay_size
 
         # ----- called by Avalanche --------------------------------------------------
-        def before_backward(self, strategy, **kwargs):
+        def before_backward(self, strategy, **kwargs):  # noqa: D401, N802
             # store current mini-batch *features* in the buffer
             with torch.no_grad():
                 feats = strategy.model.get_features(strategy.mb_x)
             self.cpqr.add_batch(feats, strategy.mb_y)
 
-        def before_training_iteration(self, strategy, **kwargs):
+        def before_training_iteration(self, strategy, **kwargs):  # noqa: D401, N802
             if len(self.cpqr._indices) == 0:
                 return  # nothing to replay yet
             feats, lbl = self.cpqr.sample(self.replay_size)
@@ -208,6 +223,7 @@ def make_replay_strategy(
 # -----------------------------------------------------------------------------
 #  MODEL FACTORY  (adds `.get_features` hook needed by CPQR)
 # -----------------------------------------------------------------------------
+
 
 def build_model(dataset_key: str) -> nn.Module:
     """Return a backbone suitable for the dataset and expose `get_features`."""
@@ -232,7 +248,11 @@ def build_model(dataset_key: str) -> nn.Module:
     model.fc = nn.Linear(in_dim, 100)  # will be adapted if needed by Avalanche
 
     def _get_feats(x, m=model):  # noqa: E306
-        return m.forward_features(x) if hasattr(m, "forward_features") else m._forward_impl(x)
+        # torchvision >=0.13 exposes `forward_features`.  For older versions fall
+        # back to the protected implementation used by the original authors.
+        if hasattr(m, "forward_features"):
+            return m.forward_features(x)  # type: ignore[attr-defined]
+        return m._forward_impl(x)  # type: ignore[attr-defined]
 
     model.get_features = _get_feats  # type: ignore[attr-defined]
     return model

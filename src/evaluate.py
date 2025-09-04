@@ -7,7 +7,7 @@ Evaluation utilities (plots, metrics post-processing, …).
 
 All experiment figures *must* be stored under the path dictated by the
 assignment instructions:
-    .research/iteration2/images
+    .research/iteration3/images
 Regardless of the output directory requested by the caller we therefore
 override the destination to comply with that requirement.
 """
@@ -27,7 +27,7 @@ import seaborn as sns  # noqa: E402
 # -----------------------------------------------------------------------------
 
 # Centralised location where *all* figures will be saved.
-_IMGS_DIR = Path(".research/iteration2/images")
+_IMGS_DIR = Path(".research/iteration3/images")
 
 
 def _prepare_dir() -> None:
