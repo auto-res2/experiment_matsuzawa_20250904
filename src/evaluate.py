@@ -1,13 +1,16 @@
-import math
 from pathlib import Path
 from typing import Dict, Any, List
+import math
 
 import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
 from scipy.stats import wilcoxon
 
-FIG_DIR = Path(".research/iteration16/images")
+# ------------------------------------------------------------------
+# All experiment figures must live under .research/iteration17/images
+# ------------------------------------------------------------------
+FIG_DIR = Path(".research/iteration17/images")
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 ###########################################################################
