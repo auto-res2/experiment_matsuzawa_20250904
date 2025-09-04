@@ -40,7 +40,7 @@ def _ensure_dir(p: Path) -> None:
 
 
 # All images must be stored under this directory according to the task rules
-_IMAGES_ROOT = Path(".research/iteration22/images")
+_IMAGES_ROOT = Path(".research/iteration23/images")
 _IMAGES_ROOT.mkdir(parents=True, exist_ok=True)
 
 
@@ -48,7 +48,7 @@ def save_bar_plot(series, title: str, fname: Path | str, ylabel: str) -> None:  
     """Save a simple bar plot.
 
     Irrespective of the *fname* requested by the caller, the figure is saved to
-    `.research/iteration22/images/<basename(fname)>` to comply with the
+    `.research/iteration23/images/<basename(fname)>` to comply with the
     evaluation framework requirements.
     """
     # Map requested filename to mandated directory while preserving basename

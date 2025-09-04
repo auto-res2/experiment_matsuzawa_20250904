@@ -69,13 +69,19 @@ def get_waterbirds_loaders(batch_size: int, seed: int) -> Tuple[Dict[str, Any], 
         split: ds.get_subset(split, transform=(tf_train if split == "train" else tf_eval))
         for split in ("train", "val", "test")
     }
+
+    # ------------------------------------------------------------------
+    # Wilds' `get_train_loader` already sets `shuffle=True` for the standard
+    # loader, so passing it again causes the underlying `DataLoader` to receive
+    # the argument twice leading to the observed `TypeError`. We therefore omit
+    # the redundant parameter here.
+    # ------------------------------------------------------------------
     loaders = {
         "train": get_train_loader(
             "standard",
             subsets["train"],
             batch_size=batch_size,
             num_workers=4,
-            shuffle=True,
             drop_last=True,
         ),
         "val": get_eval_loader("standard", subsets["val"], batch_size=batch_size, num_workers=4),
