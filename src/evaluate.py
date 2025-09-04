@@ -53,20 +53,20 @@ def evaluate(
 
 
 # -----------------------------------------------------------------------------
-#  Simple bar plot – saves to ``.research/iteration3/images/accuracy_<tag>.pdf``.
+#  Simple bar plot – saves to ``.research/iteration4/images/accuracy_<tag>.pdf``.
 # -----------------------------------------------------------------------------
 
 def save_figures(res_dict: Dict[str, Any], tag: str) -> None:
     """Save accuracy bar plot into the mandated location.
 
-    All experiment figures must reside in ``.research/iteration3/images`` to
+    All experiment figures must reside in ``.research/iteration4/images`` to
     comply with the evaluation harness.  The directory structure is created on
     demand.
     """
     # NOTE: The evaluation harness expects all images for *this* iteration to be
-    # stored in ``.research/iteration3/images``.  This path is therefore hard-
+    # stored in ``.research/iteration4/images``.  This path is therefore hard-
     # coded and **must not** be changed unless the harness itself is updated.
-    img_dir = Path(".research") / "iteration3" / "images"
+    img_dir = Path(".research") / "iteration4" / "images"
     img_dir.mkdir(parents=True, exist_ok=True)
 
     fig, ax = plt.subplots(figsize=(4, 3))
