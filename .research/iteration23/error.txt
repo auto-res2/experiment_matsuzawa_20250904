@@ -1,0 +1,15 @@
+0Byte [00:00, ?Byte/s]0Byte [00:37, ?Byte/s]10067968Byte [00:37, 100670655.34Byte/s]20135936Byte [00:38, 63849200.43Byte/s] 33546240Byte [00:38, 60551798.29Byte/s]50323456Byte [00:38, 64282274.56Byte/s]67100672Byte [00:38, 60627093.21Byte/s]77725696Byte [00:39, 68582738.08Byte/s]85483520Byte [00:39, 53611129.09Byte/s]100663296Byte [00:39, 57259957.47Byte/s]117440512Byte [00:39, 62583894.20Byte/s]134217728Byte [00:39, 65173074.42Byte/s]150978560Byte [00:40, 60297103.18Byte/s]167763968Byte [00:40, 62757989.78Byte/s]184549376Byte [00:40, 65127767.41Byte/s]201318400Byte [00:41, 66503684.27Byte/s]218095616Byte [00:41, 63638360.54Byte/s]227368960Byte [00:41, 67768398.37Byte/s]234864640Byte [00:41, 50416765.80Byte/s]251650048Byte [00:41, 55447015.64Byte/s]268427264Byte [00:42, 58440138.65Byte/s]285204480Byte [00:42, 57789015.70Byte/s]292978688Byte [00:42, 60567190.04Byte/s]301981696Byte [00:42, 53940992.46Byte/s]318758912Byte [00:43, 58526577.24Byte/s]335536128Byte [00:43, 59652895.53Byte/s]352313344Byte [00:43, 63024478.30Byte/s]369090560Byte [00:43, 60773453.45Byte/s]380493824Byte [00:44, 68382736.10Byte/s]388243456Byte [00:44, 57647196.91Byte/s]402644992Byte [00:44, 60197455.72Byte/s]419422208Byte [00:44, 60473049.12Byte/s]436199424Byte [00:45, 59431857.42Byte/s]448790528Byte [00:45, 69127395.46Byte/s]456900608Byte [00:45, 50259390.79Byte/s]469762048Byte [00:45, 51961527.05Byte/s]486539264Byte [00:45, 65809560.07Byte/s]489291776Byte [00:45, 10660007.28Byte/s]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 36, in <module>
+    main()
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 29, in main
+    run_waterbirds()
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py", line 154, in run_waterbirds
+    optimiser = torch.optim.AdamW(
+                ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/optim/adamw.py", line 28, in __init__
+    if not 0.0 <= lr:
+           ^^^^^^^^^
+TypeError: '<=' not supported between instances of 'float' and 'str'
