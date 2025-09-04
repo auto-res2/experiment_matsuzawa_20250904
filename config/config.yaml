@@ -1,0 +1,4 @@
+# config/config.yaml
+# To keep the template compact we point to one of the experiment files written
+# by src.main on first execution.  Users can edit / duplicate these files.
+include: exp1.yaml
