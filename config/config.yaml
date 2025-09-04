@@ -1,53 +1,38 @@
 common:
-  # use GPU if available otherwise fallback to CPU automatically
-  device: auto
-  data_root: data/
-  # Every figure the experiments generate **must** end up in this folder as
-  # required by the grading rubric.
-  output_root: .research/iteration6/images
-  # Reproducibility
-  seeds: [0]
-  # Optimiser hyper-parameters (simple and fast)
-  optimizer:
-    lr: 0.01
-    weight_decay: 0.0
-  early_stop_patience: 10
-  # Mixed precision off – keeps the stub code minimal / backend-agnostic
-  mixed_precision: false
-  # Console logging cadence
-  log_every: 20
-
-# ---------------------------------------------------------------------------
-# Model / training hyper-parameters used by *all* experiments
-# ---------------------------------------------------------------------------
-hyper:
-  K: 2               # maximum power of the adjacency considered
-  hidden_dim_small: 16
-  hidden_dim_large: 64
-  lambda: 0.0       # regularisation strength (unused by the stub)
-
-# ---------------------------------------------------------------------------
-# Experiment specific settings
-# ---------------------------------------------------------------------------
-experiments:
-  exp1_depth_robust:
-    datasets: ["cora"]  # small, quickly downloadable dataset only
-    depths: [1, 2, 3]
-    epochs: 3           # drastically shortened for the automated runner
-
-  exp2_node_adapt:
-    datasets: ["pubmed"]
-    noise_fraction: 0.3
-    noise_sigma: 1.0
-    depths: [2]
-    epochs: 3
-
-  exp3_scalability:
-    description: |
-      Placeholder plan for running AdaProp-GCN on ogbn-papers100M.
-      The full experiment is omitted in the automated evaluation due to
-      compute / time constraints.
-    batch_size: 20000
-    epochs: 3
-    depth: 3
-    K: 2
+  device: cuda
+  output_root: .research/iteration7/images
+  seeds:
+  - 11
+  - 22
+  - 33
+  - 44
+  - 55
+train:
+  lr: 0.003
+  wd: 0.0005
+  patience: 50
+model:
+  hidden_small: 64
+  K: 10
+  lambda: 0.2
+exp1:
+  datasets:
+  - cora
+  - citeseer
+  - pubmed
+  depth_grid:
+  - 2
+  - 4
+  - 8
+  - 16
+  - 32
+  - 64
+  epochs: 300
+exp2:
+  noise_frac: 0.3
+  sigma: 1.0
+  depth: 32
+  epochs: 300
+exp3:
+  description: OGBN-papers100M ablation (λ={0,0.01,0.1}).
+  epochs: 40

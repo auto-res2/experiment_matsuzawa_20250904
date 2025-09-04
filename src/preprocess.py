@@ -1,67 +1,9 @@
-"""src/preprocess.py
-Data-loading, utility helpers and graph preprocessing.
-"""
+"""src/preprocess.py – dataset loading utilities & cached sparse powers"""
 from __future__ import annotations
 
-# -----------------------------------------------------------------------------
-# Compatibility patch ----------------------------------------------------------
-# -----------------------------------------------------------------------------
-# DGL >=2.1 optionally depends on GraphBolt which, in turn, tries to import
-# ``torchdata.datapipes``.  The full ``torchdata`` package is large and may not
-# be present (or may be stripped-down) in the execution environment used by the
-# automated grader.  A missing import crashes the whole programme long before
-# our own code runs.  To keep the public behaviour identical while eliminating
-# the hard dependency, we inject a *very small* stub that satisfies the import
-# sequence without providing any real functionality.
-#
-# The stub is only created when the genuine module hierarchy is absent so it is
-# entirely transparent on machines that do ship the real TorchData package.
-# -----------------------------------------------------------------------------
-import sys
-import types
-
-try:
-    import torchdata.datapipes  # type: ignore  # noqa: F401
-except ModuleNotFoundError:
-    td_root = sys.modules.get("torchdata")
-    if td_root is None:
-        td_root = types.ModuleType("torchdata")
-        sys.modules["torchdata"] = td_root
-
-    # torchdata.datapipes -----------------------------------------------------
-    dp_mod = types.ModuleType("torchdata.datapipes")
-    sys.modules["torchdata.datapipes"] = dp_mod
-
-    # torchdata.datapipes.iter -----------------------------------------------
-    iter_mod = types.ModuleType("torchdata.datapipes.iter")
-    sys.modules["torchdata.datapipes.iter"] = iter_mod
-
-    class _IterDataPipe:  # minimal stand-in
-        """Fallback replacement for TorchData's IterDataPipe.
-
-        Only the iterator protocol is implemented as this is all that DGL
-        inspects during import.  Any attempt to *use* the datapipe at runtime
-        will fail fast – which is fine because our research code never touches
-        it.
-        """
-
-        def __iter__(self):
-            return iter(())
-
-        def __len__(self):
-            return 0
-
-    # Wire everything together so that the usual import paths resolve.
-    iter_mod.IterDataPipe = _IterDataPipe
-    dp_mod.iter = iter_mod
-    td_root.datapipes = dp_mod
-
-# -----------------------------------------------------------------------------
-# Standard library imports -----------------------------------------------------
-# -----------------------------------------------------------------------------
-from typing import Tuple, Dict, List
+import os
 from pathlib import Path
-import random
+from typing import Dict, List, Tuple
 
 import numpy as np
 import scipy.sparse as sp
@@ -71,93 +13,84 @@ import dgl
 from dgl.data import CoraGraphDataset, CiteseerGraphDataset, PubmedGraphDataset
 from ogb.nodeproppred import DglNodePropPredDataset, Evaluator
 
-# ----------------------------------------------------------------------------
-# 1)  MISCELLANEOUS UTILS -----------------------------------------------------
-# ----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+#  Paths                                                                      
+# ---------------------------------------------------------------------------
+HERE = Path(__file__).resolve().parent
+DATA_ROOT = HERE.parent / "data"
+DATA_ROOT.mkdir(parents=True, exist_ok=True)
 
-def set_seed(seed: int):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    dgl.random.seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+# ---------------------------------------------------------------------------
+#  Small helpers                                                              
+# ---------------------------------------------------------------------------
 
-
-def print_header(title: str):
-    line = "-" * len(title)
-    print(f"\n{line}\n{title}\n{line}")
+def _l2_normalise(X: torch.Tensor) -> torch.Tensor:
+    return F.normalize(X, p=2, dim=-1)
 
 
-def fail(msg: str):
-    print(f"[FATAL] {msg}")
-    raise SystemExit(1)
+# ---------------------------------------------------------------------------
+#  Public API                                                                 
+# ---------------------------------------------------------------------------
 
-# ----------------------------------------------------------------------------
-# 2)  DATA LOADING ------------------------------------------------------------
-# ----------------------------------------------------------------------------
-
-def load_planetoid(name: str, data_root: str) -> Tuple[dgl.DGLGraph, torch.Tensor, torch.Tensor, Dict[str, torch.Tensor]]:
-    if name == "cora":
-        ds = CoraGraphDataset(raw_dir=data_root)
-    elif name == "citeseer":
-        ds = CiteseerGraphDataset(raw_dir=data_root)
-    elif name == "pubmed":
-        ds = PubmedGraphDataset(raw_dir=data_root)
+def load_data(name: str, out_dir: Path):
+    """Return (graph, features, labels, split_idx, evaluator|None)."""
+    if name.lower() in {"cora", "citeseer", "pubmed"}:
+        if name.lower() == "cora":
+            ds = CoraGraphDataset(raw_dir=DATA_ROOT)
+        elif name.lower() == "citeseer":
+            ds = CiteseerGraphDataset(raw_dir=DATA_ROOT)
+        else:
+            ds = PubmedGraphDataset(raw_dir=DATA_ROOT)
+        g = dgl.add_self_loop(ds[0])
+        X = _l2_normalise(g.ndata["feat"].float())
+        y = g.ndata["label"].long()
+        split = {
+            "train": torch.nonzero(g.ndata["train_mask"]).squeeze(),
+            "val": torch.nonzero(g.ndata["val_mask"]).squeeze(),
+            "test": torch.nonzero(g.ndata["test_mask"]).squeeze(),
+        }
+        evaluator = None
+    elif name.startswith("ogbn"):
+        ds = DglNodePropPredDataset(name=name, root=DATA_ROOT)
+        g, y = ds[0]
+        g = dgl.add_self_loop(g)
+        X = _l2_normalise(g.ndata["feat"].float())
+        y = y.squeeze().long()
+        split = ds.get_idx_split()
+        evaluator = Evaluator(name)
     else:
-        fail(f"Unknown Planetoid dataset: {name}")
-
-    g = ds[0]
-    g = dgl.add_self_loop(g)
-    feats = g.ndata["feat"].float()
-    labels = g.ndata["label"].long()
-
-    train_mask = g.ndata["train_mask"].bool()
-    val_mask = g.ndata["val_mask"].bool()
-    test_mask = g.ndata["test_mask"].bool()
-    split = {
-        "train": torch.nonzero(train_mask, as_tuple=False).squeeze(),
-        "val": torch.nonzero(val_mask, as_tuple=False).squeeze(),
-        "test": torch.nonzero(test_mask, as_tuple=False).squeeze(),
-    }
-
-    feats = F.normalize(feats, p=2, dim=1)
-    return g, feats, labels, split
+        raise ValueError(f"Unknown dataset {name}")
+    return g, X, y, split, evaluator
 
 
-def load_ogb(name: str, data_root: str):
-    dataset = DglNodePropPredDataset(name=name, root=data_root)
-    g, labels = dataset[0]
-    g = dgl.add_self_loop(g)
-    labels = labels.squeeze().long()
-    split_idx = dataset.get_idx_split()
-    split = {k: v for k, v in split_idx.items()}
-    feats = g.ndata["feat"].float()
-    feats = F.normalize(feats, p=2, dim=1)
-    evaluator = Evaluator(name=name)
-    return g, feats, labels, split, evaluator
+def cached_powers(g: dgl.DGLGraph, K: int, cache_dir: Path) -> List[torch.Tensor]:
+    """Return list [I, Â, Â², …, Â^K] in sparse COO format."""
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    fname = cache_dir / f"powers_K{K}_{g.num_nodes()}N.pt"
+    if fname.exists():
+        try:
+            return torch.load(fname)
+        except Exception:
+            pass  # fall-through to recompute if file is corrupted
 
-# ----------------------------------------------------------------------------
-# 3)  GRAPH POWER SERIES ------------------------------------------------------
-# ----------------------------------------------------------------------------
-
-def sparse_power_series(g: dgl.DGLGraph, K: int) -> List[torch.Tensor]:
-    """Pre-compute sparse powers Â^k (row-normalised) as torch.sparse tensors."""
-    device = torch.device("cpu")
     A = g.adj(scipy_fmt="coo").astype(np.float32)
     degs = np.maximum(A.sum(1).A1, 1)
-    deg_inv = sp.diags(1.0 / degs)
-    A_norm = deg_inv @ A
+    Dinv = sp.diags(1.0 / degs)
+    A_norm = Dinv @ A
 
-    powers = [sp.eye(g.num_nodes(), dtype=np.float32)]
+    mats = [sp.eye(g.num_nodes(), dtype=np.float32)]
     for _ in range(1, K + 1):
-        powers.append(powers[-1] @ A_norm)
+        mats.append(mats[-1] @ A_norm)
 
-    sparse_tensors = []
-    for mat in powers:
-        coo = mat.tocoo()
-        indices = torch.LongTensor([coo.row, coo.col])
-        values = torch.FloatTensor(coo.data)
-        sparse = torch.sparse.FloatTensor(indices, values, torch.Size(mat.shape)).to(device)
-        sparse_tensors.append(sparse)
-    return sparse_tensors
+    res: List[torch.Tensor] = []
+    for M in mats:
+        coo = M.tocoo()
+        idx = torch.tensor([coo.row, coo.col], dtype=torch.long)
+        val = torch.tensor(coo.data, dtype=torch.float32)
+        res.append(torch.sparse_coo_tensor(idx, val, torch.Size(M.shape)))
+
+    try:
+        torch.save(res, fname)
+    except Exception:
+        pass  # ignore I/O errors – computation is deterministic anyway
+    return res
