@@ -1,3 +1,18 @@
+# -----------------------------  Core  --------------------------------------
 numpy<2.0
 scipy<1.12
-[Appended constraints; rest kept unchanged]
+pandas>=2.0,<2.2
+PyYAML>=6.0,<7.0
+
+# ---------------------------  Deep Learning  -------------------------------
+# Version pinning keeps the installation reasonably light-weight while still
+# providing CUDA support on the available Tesla T4 GPU (if the wheel tagged
+# with *+cu118* is detected it will be fetched automatically; otherwise the
+# CPU-only build will be used as a safe fallback).
+torch>=1.13.0,<2.0.0
+
+dgl>=1.1.0,<2.0.0  # provides convenient graph data-sets such as Cora
+
+# ----------------------------  Plotting  -----------------------------------
+matplotlib>=3.7,<4.0
+seaborn>=0.13,<0.14
