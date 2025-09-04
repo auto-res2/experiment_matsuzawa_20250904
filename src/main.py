@@ -197,7 +197,7 @@ FRODO_HYPER = FRODOHyper(**_cfg_dict["frodo"])
 def main():
     os.makedirs(GLOBAL_CFG.data_root, exist_ok=True)
     # Ensure the mandated image directory exists
-    os.makedirs(".research/iteration2/images", exist_ok=True)
+    os.makedirs(".research/iteration4/images", exist_ok=True)
     set_global_seeds(GLOBAL_CFG.seeds[0])
 
     print("\n================ EXPERIMENT 1 – Depth scaling ================")

@@ -35,7 +35,7 @@ def effective_rank(x: torch.Tensor) -> float:
 def group_distance_ratio(x: torch.Tensor, y: torch.Tensor) -> float:
     """Average ratio of within-class to between-class feature distances.
 
-    For a mini-batch of N nodes (N ≤ 2048 in the current call-sites)
+    For a mini-batch of N nodes (N ≤ 2 048 in the current call-sites)
     we compute the pair-wise Euclidean distance matrix ∈ R^{N×N} and
     take the mean distance of node pairs that share the same label
     (within-class) versus pairs of different labels (between-class).
@@ -71,7 +71,7 @@ def group_distance_ratio(x: torch.Tensor, y: torch.Tensor) -> float:
 # ------------------------------------------------------------------
 
 # Enforce the updated output directory (see task instructions)
-_SAVE_DIR = Path(".research/iteration3/images")
+_SAVE_DIR = Path(".research/iteration4/images")
 
 
 def save_lineplot(
