@@ -15,6 +15,10 @@ from torch.utils.data import DataLoader
 from .evaluate import accuracy, save_bar
 
 
+# Directory where visual artefacts must be stored according to the task
+_IMG_OUT_DIR = Path(".research/iteration8/images")
+
+
 def run_one(
     model: torch.nn.Module,
     loader_tr: DataLoader,
@@ -38,6 +42,7 @@ def run_one(
     tag : str
         A short string to identify artefacts on disk.
     """
+
     model.to(device)
     opt = torch.optim.SGD(
         model.parameters(), lr=float(cfg["lr"]), momentum=0.9, weight_decay=1e-4
@@ -55,6 +60,8 @@ def run_one(
             opt.zero_grad(set_to_none=True)
             with torch.cuda.amp.autocast(enabled=device.type == "cuda"):
                 logits = model(x)
+                # If the model implements a specialised loss function, use it –
+                # otherwise, fall back to plain cross-entropy.
                 if hasattr(model, "loss_fn"):
                     loss, _parts = model.loss_fn(logits, y)  # type: ignore[attr-defined]
                 else:
@@ -80,8 +87,8 @@ def run_one(
     best_acc = accuracy(model, loader_val, device)
 
     # ---- persist artefacts ---------------------------------------------------
-    out_dir = Path(".research/iteration7/images")
-    save_bar(best_acc, tag, out_dir)
+    _IMG_OUT_DIR.mkdir(parents=True, exist_ok=True)
+    save_bar(best_acc, tag, _IMG_OUT_DIR)
     Path("results").mkdir(exist_ok=True)
     with open(f"results/{tag}.json", "w") as fh:
         json.dump({"val_acc": best_acc}, fh)
