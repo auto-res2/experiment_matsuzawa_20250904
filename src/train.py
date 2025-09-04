@@ -1,3 +1,5 @@
+[UPDATED CONTENT BELOW]
+```python
 """src/train.py
 Model-training related classes and functions.
 The code is **directly refactored** from the single-file implementation so
@@ -58,6 +60,29 @@ AMP_CONTEXT = (
 # ImageNet statistics kept exactly as in the monolithic script
 IMNET_MEAN = (0.485, 0.456, 0.406)
 IMNET_STD = (0.229, 0.224, 0.225)
+
+# ────────────────────────────────────────────────────────────
+#  Helper – robustly extract Waterbirds group IDs irrespective of WILDS version
+# ────────────────────────────────────────────────────────────
+
+def _extract_groups(batch: Dict[str, torch.Tensor]) -> torch.Tensor:  # noqa: D401
+    """Return group‐IDs (0–3) for a Waterbirds mini-batch.
+
+    The metadata ordering differs slightly across WILDS releases.  In v2.0 the
+    first column is the class label (y) and the second column is the environment
+    attribute (place).  Earlier releases already contained the pre-computed
+    group IDs in the first column.  To stay backward-compatible we detect the
+    shape at run-time and construct the group IDs if necessary.
+    """
+    metadata = batch["metadata"]  # (B, k) where k==1 (old) or k>=2 (new)
+    if metadata.size(1) == 1:  # legacy – group id already supplied
+        return metadata[:, 0]
+
+    # Newer format – columns are [y, place, …].  Groups are the cartesian
+    # product of label (water/land bird) and place (water/land background).
+    y = batch["y"].view(-1)
+    place = metadata[:, 1].view(-1)
+    return y * 2 + place  # 0–3
 
 # ────────────────────────────────────────────────────────────
 #  1.  Utilities
@@ -211,6 +236,7 @@ class GroupDROLoss:
 #  4.  Model factory – centralised to ensure identical init per seed
 # ------------------------------------------------------------------
 
+
 def build_model() -> nn.Module:
     model_cfg = CFG["model"]
     m = create_model(model_cfg["name"], pretrained=model_cfg.get("pretrained", True))
@@ -300,7 +326,7 @@ def run_waterbirds() -> None:  # noqa: D401
                 for batch in loaders["train"]:
                     x = batch["images"].to(DEVICE, dtype=DTYPE)
                     y = batch["y"].to(DEVICE)
-                    g = batch["metadata"][:, 0].to(DEVICE)
+                    g = _extract_groups(batch).to(DEVICE)
 
                     optimiser.zero_grad(set_to_none=True)
                     with AMP_CONTEXT(device_type=DEVICE, dtype=DTYPE):  # type: ignore[misc]
@@ -342,7 +368,7 @@ def run_waterbirds() -> None:  # noqa: D401
             for batch in loaders["val"]:
                 x = batch["images"].to(DEVICE, dtype=DTYPE)
                 y = batch["y"].to(DEVICE)
-                g = batch["metadata"][:, 0].to(DEVICE)
+                g = _extract_groups(batch).to(DEVICE)
                 with AMP_CONTEXT(device_type=DEVICE, dtype=DTYPE):  # type: ignore[misc]
                     logits = model(x)
                 logits_all.append(logits.cpu())
@@ -391,3 +417,4 @@ if __name__ == "__main__":  # pragma: no cover
     tic = time.time()
     run_waterbirds()
     print(f"[bold green]Finished Waterbirds experiment in {time.time() - tic:.1f}s.")
+```

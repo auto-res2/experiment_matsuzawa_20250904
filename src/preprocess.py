@@ -1,3 +1,5 @@
+[UPDATED CONTENT BELOW]
+```python
 """src/preprocess.py
 Data-loading & preprocessing utilities (currently Waterbirds only).
 """
@@ -49,4 +51,10 @@ def get_waterbirds_loaders(
     def loader_factory():  # new DataLoader objects each call
         return {s: make_loader(s) for s in ("train", "val")}
 
-    return loader_factory, {"n_groups": wb.n_groups}
+    # Robust retrieval of the number of groups (always 4 for Waterbirds)
+    n_groups = getattr(wb, "n_groups", 4)
+    if n_groups is None:
+        n_groups = 4
+
+    return loader_factory, {"n_groups": int(n_groups)}
+```

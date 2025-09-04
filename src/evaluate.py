@@ -1,3 +1,5 @@
+[UPDATED CONTENT BELOW]
+```python
 from __future__ import annotations
 
 """src/evaluate.py
@@ -28,11 +30,11 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DTYPE = torch.bfloat16 if torch.cuda.is_available() else torch.float32
 
 # ------------------------------------------------------------------
-#  Paths – images are required to live under .research/iteration16/images
+#  Paths – images are required to live under .research/iteration17/images
 # ------------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS_DIR = ROOT / "results"
-FIG_DIR = ROOT / ".research" / "iteration16" / "images"  # updated path
+FIG_DIR = ROOT / ".research" / "iteration17" / "images"  # updated path per spec
 CKPT_DIR = ROOT / "models"
 for d in (RESULTS_DIR, FIG_DIR):
     d.mkdir(parents=True, exist_ok=True)
@@ -75,7 +77,13 @@ def eval_waterbirds(model, loader, n_groups: int):  # noqa: ANN001
     for batch in loader:
         x = batch["images"].to(DEVICE, dtype=DTYPE)
         y = batch["y"].to(DEVICE)
-        g = batch["metadata"][:, 0].to(DEVICE)
+        # Robust group extraction (mirrors logic in train.py)
+        metadata = batch["metadata"]
+        if metadata.size(1) == 1:
+            g = metadata[:, 0].to(DEVICE)
+        else:
+            place = metadata[:, 1].to(DEVICE)
+            g = (y * 2 + place)
         logits = model(x)
         pred = logits.argmax(1)
         y_cat.append(y)
@@ -116,7 +124,6 @@ def save_bar(series: pd.Series, fname: str, ylabel: str, multiply: float = 1.0) 
     plt.savefig(fig_path, format="pdf", bbox_inches="tight")
     plt.close()
     print("Saved figure:", fig_path)
-
 
 # ------------------------------------------------------------------
 #  Diagnostics (EXP-3)
@@ -186,3 +193,4 @@ def paired_ttest(csv_path: Path, metric: str, method_a: str, method_b: str):  # 
     b = df[df.method == method_b][metric]
     t_stat, p_val = ttest_rel(a, b)
     print(f"Paired t-test {method_a} vs {method_b} on {metric}:  t={t_stat:.3f}  p={p_val:.4f}")
+```
