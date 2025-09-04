@@ -1,7 +1,9 @@
 torch
 torch_geometric
-networkx
+torch_sparse
+torch_scatter
 numpy
-matplotlib
 scipy
+networkx
+matplotlib
 pyyaml

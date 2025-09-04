@@ -1,4 +1,16 @@
-# config/config.yaml
-# To keep the template compact we point to one of the experiment files written
-# by src.main on first execution.  Users can edit / duplicate these files.
-include: exp1.yaml
+name: curvamp_exp1
+datasets:
+  - Path-of-Cliques
+  - Ring-of-Cliques
+depth: 32
+hidden: 128
+K: 3
+rewire_ratio: 0.02
+lambda_c: 0.1
+lr: 0.0005
+epochs: 400
+patience: 100
+seeds:
+  - 0
+  - 1
+  - 2

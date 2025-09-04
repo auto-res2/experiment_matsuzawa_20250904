@@ -1,151 +1,55 @@
-"""src/preprocess.py
-Data creation / loading and splitting utilities.
+"""
+preprocess.py – dataset loading & synthetic graph helpers
 """
 from __future__ import annotations
 
-import random
 from pathlib import Path
-from typing import Dict, Callable
+from typing import Any
 
 import networkx as nx
-import numpy as np
 import torch
-from torch_geometric.data import Data
-from torch_geometric.utils import to_undirected
-
-ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = ROOT / "data"
+from torch_geometric.datasets import Planetoid, WebKB, LRGB
+from torch_geometric.utils import from_networkx
 
 # -----------------------------------------------------------------------------
-#                        Synthetic graphs (PoC, RoC, Mix)
-# -----------------------------------------------------------------------------
-SYN_SEED = 1234
-np.random.seed(SYN_SEED)
-random.seed(SYN_SEED)
-
-
-def _poc_graph() -> Data:
-    """Path-of-Cliques."""
-    fname = DATA_DIR / "synthetic/poc.npz"
-    if fname.exists():
-        arr = np.load(fname)
-        return Data(
-            x=torch.tensor(arr["x"], dtype=torch.float32),
-            edge_index=torch.tensor(arr["edge_index"], dtype=torch.long),
-            y=torch.tensor(arr["y"], dtype=torch.long),
-        )
-    g = nx.Graph()
-    label = []
-    vid = 0
-    for c in range(30):
-        nodes = list(range(vid, vid + 10))
-        g.add_nodes_from(nodes)
-        for i in nodes:
-            for j in nodes:
-                if i < j:
-                    g.add_edge(i, j)
-        if c > 0:
-            g.add_edge(vid - 1, vid)
-        label += [c] * 10
-        vid += 10
-    edge_index = torch.tensor(list(g.edges)).t().contiguous()
-    edge_index = to_undirected(edge_index)
-    x = torch.eye(10).repeat(30, 1) + 0.01 * torch.randn(300, 10)
-    x = (x - x.mean(0)) / (x.std(0) + 1e-6)
-    y = torch.tensor(label, dtype=torch.long)
-    fname.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(fname, edge_index=edge_index.numpy(), x=x.numpy(), y=y.numpy())
-    return Data(x=x, edge_index=edge_index, y=y)
-
-
-def _roc_graph() -> Data:
-    """Ring-of-Cliques (cycle of 30 clique attachments)."""
-    fname = DATA_DIR / "synthetic/roc.npz"
-    if fname.exists():
-        arr = np.load(fname)
-        return Data(
-            x=torch.tensor(arr["x"], dtype=torch.float32),
-            edge_index=torch.tensor(arr["edge_index"], dtype=torch.long),
-            y=torch.tensor(arr["y"], dtype=torch.long),
-        )
-
-    # Start with a 30-node cycle to serve as the backbone.
-    g = nx.cycle_graph(30)
-    label = []
-    vid_off = 0
-
-    # IMPORTANT: Iterate over a *fixed* list of backbone nodes to avoid the
-    # "dictionary changed size during iteration" RuntimeError that occurs when
-    # we later add new nodes while looping.
-    backbone_nodes = list(range(30))
-
-    for c, clique_center in enumerate(backbone_nodes):
-        clique_nodes = list(range(vid_off, vid_off + 10))
-        # Fully connect the clique.
-        for i in clique_nodes:
-            for j in clique_nodes:
-                if i < j:
-                    g.add_edge(i, j)
-        # Attach the clique to its backbone node.
-        g.add_edge(clique_center, vid_off)
-        label += [c] * 10
-        vid_off += 10
-
-    edge_index = torch.tensor(list(g.edges)).t().contiguous()
-    edge_index = to_undirected(edge_index)
-    x = torch.eye(10).repeat(30, 1) + 0.01 * torch.randn(300, 10)
-    x = (x - x.mean(0)) / (x.std(0) + 1e-6)
-    y = torch.tensor(label, dtype=torch.long)
-    fname.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(fname, edge_index=edge_index.numpy(), x=x.numpy(), y=y.numpy())
-    return Data(x=x, edge_index=edge_index, y=y)
-
-
-def _mx_graph() -> Data:
-    fname = DATA_DIR / "synthetic/mx.npz"
-    if fname.exists():
-        arr = np.load(fname)
-        return Data(
-            x=torch.tensor(arr["x"], dtype=torch.float32),
-            edge_index=torch.tensor(arr["edge_index"], dtype=torch.long),
-            y=torch.tensor(arr["y"], dtype=torch.long),
-        )
-    poc = _poc_graph()
-    roc = _roc_graph()
-    x = torch.cat([poc.x, roc.x], dim=0)
-    y = torch.cat([poc.y, roc.y + 30], dim=0)
-    edge_index = torch.cat([poc.edge_index, roc.edge_index + poc.x.size(0)], dim=1)
-    rng = np.random.RandomState(SYN_SEED)
-    bridges = torch.tensor([[rng.randint(0, poc.x.size(0)), rng.randint(poc.x.size(0), x.size(0))] for _ in range(10)]).t()
-    edge_index = torch.cat([edge_index, bridges], dim=1)
-    edge_index = to_undirected(edge_index)
-    fname.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(fname, edge_index=edge_index.numpy(), x=x.numpy(), y=y.numpy())
-    return Data(x=x, edge_index=edge_index, y=y)
-
-# -----------------------------------------------------------------------------
-#                           Public loader map
+#  Synthetic graphs used for fast verification
 # -----------------------------------------------------------------------------
 
-dataset_map: Dict[str, Callable[[], Data]] = {
-    "path_of_cliques": _poc_graph,
-    "ring_of_cliques": _roc_graph,
-    "mixture_graph": _mx_graph,
-}
+def _ring_of_cliques() -> Any:
+    g = nx.ring_of_cliques(30, 10)
+    for v in g.nodes():
+        g.nodes[v]["x"] = torch.nn.functional.one_hot(torch.tensor(v % 10), 10).float()
+        g.nodes[v]["y"] = v // 10
+    return from_networkx(g)
+
+
+def _path_of_cliques() -> Any:
+    g = nx.connected_caveman_graph(30, 10)
+    for v in g.nodes():
+        g.nodes[v]["x"] = torch.nn.functional.one_hot(torch.tensor(v % 10), 10).float()
+        g.nodes[v]["y"] = v // 10
+    return from_networkx(g)
+
+
+def synthetic_graph(name: str):
+    if name == "Path-of-Cliques":
+        return _path_of_cliques()
+    if name == "Ring-of-Cliques":
+        return _ring_of_cliques()
+    raise KeyError(f"Unknown synthetic graph '{name}'")
+
 
 # -----------------------------------------------------------------------------
-#                                 Splits
+#  Public loader (real + synthetic)
 # -----------------------------------------------------------------------------
 
-def random_split(data: Data, val_ratio: float = 0.2, test_ratio: float = 0.2, seed: int = 0):
-    torch.manual_seed(seed)
-    idx = torch.randperm(data.num_nodes)
-    n = data.num_nodes
-    n_val, n_test = int(n * val_ratio), int(n * test_ratio)
-    data.train_mask = torch.zeros(n, dtype=torch.bool)
-    data.val_mask = torch.zeros(n, dtype=torch.bool)
-    data.test_mask = torch.zeros(n, dtype=torch.bool)
-    data.train_mask[idx[: n - n_val - n_test]] = True
-    data.val_mask[idx[n - n_val - n_test : n - n_test]] = True
-    data.test_mask[idx[-n_test:]] = True
-    return data
+def load_dataset(name: str):
+    if name in {"Cora", "CiteSeer", "PubMed"}:
+        return Planetoid(root=f"data/{name}", name=name)[0]
+    if name in {"Texas", "Cornell", "Wisconsin"}:
+        return WebKB(root=f"data/{name}", name=name)[0]
+    if name in {"Peptides-func", "Peptides-struct", "PCQM-Contact"}:
+        key = name.replace("-", "")
+        return LRGB(root="data/LRGB", name=key)[0]
+    # --- synthetic fallback ---
+    return synthetic_graph(name)

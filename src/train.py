@@ -1,101 +1,210 @@
-"""src/train.py
-Core model architectures and training-time utilities.
+"""
+train.py – model definition and training utilities for CurvAMP
 """
 from __future__ import annotations
+import math, random, time
+from pathlib import Path
+from typing import Dict, Any, List, Tuple
 
-import math
-from typing import List, Tuple
-
+import numpy as np
 import torch
-import torch.nn as nn
-from torch.optim import Optimizer
-from torch_geometric.nn import GCNConv
+from torch import nn
+from torch_geometric.nn import MessagePassing, PairNorm
+from torch_sparse import SparseTensor
+from torch_scatter import scatter_mean
 
 # -----------------------------------------------------------------------------
-#                                PairNorm
+# CurvAMP building blocks
 # -----------------------------------------------------------------------------
-class PairNorm(nn.Module):
-    """Implementation of PairNorm (Zhao & Akoglu, 2020)."""
 
-    def __init__(self, scale: float = 1.0):
+def _approx_node_curvature(edge_index: torch.Tensor, num_nodes: int) -> torch.Tensor:
+    """Very fast proxy for Ollivier–Ricci curvature using degree difference."""
+    row, col = edge_index
+    deg = torch.bincount(row, minlength=num_nodes).float()
+    curv = 1.0 / (deg[row] + 1e-6) + 1.0 / (deg[col] + 1e-6)
+    return scatter_mean(curv, row, dim=0, dim_size=num_nodes)
+
+
+class CurvPair(nn.Module):
+    """PairNorm scale factor modulated by node curvature."""
+
+    def __init__(self, base_scale: float = 1.0):
         super().__init__()
-        self.s = scale
+        self.s0 = base_scale
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:  # noqa: D401
+    def forward(self, x: torch.Tensor, kappa: torch.Tensor) -> torch.Tensor:
         col_mean = x.mean(dim=0, keepdim=True)
         x = x - col_mean
         row_norm = (x.pow(2).sum(dim=1, keepdim=True) + 1e-6).sqrt()
         row_mean = row_norm.mean()
-        x = self.s * x / row_mean
-        return x
+        s_i = self.s0 * torch.sigmoid(-kappa).unsqueeze(1)  # (N,1)
+        return s_i * x / row_mean
+
+
+class UniformityLoss(nn.Module):
+    """Collapse-avoiding regulariser (similar to ContraNorm)."""
+
+    def __init__(self, lam: float = 1e-2):
+        super().__init__()
+        self.lam = lam
+
+    def forward(self, z: torch.Tensor) -> torch.Tensor:  # (N,d)
+        z = torch.nn.functional.normalize(z, dim=1)
+        sim = torch.einsum("nd,md->nm", z, z)
+        return self.lam * torch.exp(2 * sim).mean()
+
+
+class CurvAMPConv(MessagePassing):
+    """Single CurvAMP layer implementing multi-scale bank, curvature gate, online rewiring and CurvPair normalisation."""
+
+    def __init__(self, in_dim: int, out_dim: int, K: int = 3, rewired_ratio: float = 0.02):
+        super().__init__(aggr="add")
+        self.K, self.rewired_ratio = K, rewired_ratio
+        self.lins = nn.ModuleList(
+            [nn.Linear(in_dim, out_dim, bias=False) for _ in range(K)]
+        )
+        self.gate = nn.Sequential(nn.Linear(2, 16), nn.GELU(), nn.Linear(16, K))
+        self.norm = CurvPair()
+        self.reset_parameters()
+
+    # ------------------------------------------------------------------
+    def reset_parameters(self):
+        for l in self.lins:
+            nn.init.xavier_uniform_(l.weight)
+        for m in self.gate:  # type: ignore[assignment]
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+
+    # ------------------------------------------------------------------
+    def forward(
+        self, x: torch.Tensor, edge_index: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Returns: (updated features, possibly rewired edge_index)."""
+        num_nodes = x.size(0)
+        # 1) multi-scale bank (cheap adjacency powers)
+        A = SparseTensor(
+            row=edge_index[0], col=edge_index[1], sparse_sizes=(num_nodes, num_nodes)
+        )
+        bank = [x]
+        for _ in range(1, self.K):
+            x = A @ x
+            bank.append(x)
+        bank_proj = [lin(h) for lin, h in zip(self.lins, bank)]
+
+        # 2) curvature gate
+        kappa = _approx_node_curvature(edge_index, num_nodes)
+        deg = A.sum(dim=1).to(torch.float)
+        gate_in = torch.stack([kappa, deg], dim=1)  # (N,2)
+        alpha = torch.softmax(self.gate(gate_in), dim=-1)  # (N,K)
+        out = sum(alpha[:, k : k + 1] * bank_proj[k] for k in range(self.K))
+
+        # 3) online micro-rewiring (forward only)
+        with torch.no_grad():
+            row, col = edge_index
+            curv_edges = -(kappa[row] + kappa[col])  # large negative curvature ⇒ candidate
+            m = int(self.rewired_ratio * edge_index.size(1))
+            if m > 0:
+                _, idx = torch.topk(curv_edges, k=m, largest=True)
+                new_edges = torch.stack([row[idx], col[idx]], dim=0)
+                edge_index = torch.cat([edge_index, new_edges], dim=1)
+
+        # 4) CurvPair
+        out = self.norm(out, kappa)
+        return out, edge_index
+
 
 # -----------------------------------------------------------------------------
-#                                Deep GCN
+# End-to-end model
 # -----------------------------------------------------------------------------
-class DeepGCN(nn.Module):
-    """Deep vanilla-GCN stack with optional PairNorm."""
 
+class CurvAMPNet(nn.Module):
     def __init__(
         self,
-        num_features: int,
-        num_classes: int,
+        in_dim: int,
         hidden: int,
+        out_dim: int,
         depth: int,
-        dropout_in: float = 0.2,
-        dropout_h: float = 0.5,
-        use_pairnorm: bool = False,
+        K: int,
+        rewired_ratio: float,
     ) -> None:
         super().__init__()
-        self.depth = depth
-        self.use_pairnorm = use_pairnorm
-        self.pn = PairNorm() if use_pairnorm else None
-        self.dropout_in = nn.Dropout(dropout_in)
-        self.convs = nn.ModuleList()
-        self.activations = nn.ModuleList()
-        self.dropouts = nn.ModuleList()
-        in_dim = num_features
-        for _ in range(depth):
-            self.convs.append(GCNConv(in_dim, hidden, add_self_loops=False, normalize=True))
-            self.activations.append(nn.GELU())
-            self.dropouts.append(nn.Dropout(dropout_h))
-            in_dim = hidden
-        self.lin = nn.Linear(hidden, num_classes)
+        self.layers = nn.ModuleList(
+            [
+                CurvAMPConv(
+                    in_dim if i == 0 else hidden, hidden, K, rewired_ratio
+                )
+                for i in range(depth)
+            ]
+        )
+        self.head = nn.Linear(hidden, out_dim)
 
-    def forward(self, data):  # noqa: D401
-        x, edge_index = data.x, data.edge_index
-        x = self.dropout_in(x)
-        per_layer_feats: List[torch.Tensor] = []
-        for l in range(self.depth):
-            x = self.convs[l](x, edge_index)
-            if self.use_pairnorm:
-                x = self.pn(x)
-            x = self.activations[l](x)
-            x = self.dropouts[l](x)
-            per_layer_feats.append(x)
-        out = self.lin(x)
-        return out, per_layer_feats
+    def forward(self, data):
+        x, ei = data.x, data.edge_index
+        feats: List[torch.Tensor] = []
+        for conv in self.layers:
+            x, ei = conv(x, ei)
+            x = torch.nn.functional.gelu(x)
+            feats.append(x)
+        logits = self.head(x)
+        return logits, feats
+
 
 # -----------------------------------------------------------------------------
-#                              Train loop
+# Training routine
 # -----------------------------------------------------------------------------
 
-def train_epoch(
-    model: nn.Module,
-    data,
-    optimizer: Optimizer,
-    scaler: torch.cuda.amp.GradScaler | None = None,
-) -> float:
-    """Run one optimisation step with optional AMP."""
-    model.train()
-    optimizer.zero_grad(set_to_none=True)
-    with torch.cuda.amp.autocast(enabled=scaler is not None):
-        out, _ = model(data)
-        loss = nn.functional.cross_entropy(out[data.train_mask], data.y[data.train_mask])
-    if scaler is not None:
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
-    else:
+def train_model(
+    data, cfg: Dict[str, Any], device: torch.device
+) -> Tuple[nn.Module, Dict[str, Any]]:
+    """Trains CurvAMP on a single split and returns the best model and logs."""
+
+    in_dim = data.x.size(1)
+    out_dim = int(data.y.max().item() + 1)
+
+    model = CurvAMPNet(
+        in_dim,
+        cfg["hidden"],
+        out_dim,
+        cfg["depth"],
+        cfg["K"],
+        cfg["rewire_ratio"],
+    ).to(device)
+
+    uniformity = UniformityLoss(cfg["lambda_c"])
+    optimiser = torch.optim.AdamW(model.parameters(), lr=cfg["lr"], weight_decay=5e-4)
+
+    best_state = None
+    best_val = 0.0
+    hist: List[float] = []
+
+    for epoch in range(cfg["epochs"]):
+        model.train()
+        optimiser.zero_grad()
+        logits, feats = model(data)
+        loss = torch.nn.functional.cross_entropy(
+            logits[data.train_mask], data.y[data.train_mask]
+        ) + uniformity(feats[-1])
         loss.backward()
-        optimizer.step()
-    return loss.item()
+        nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimiser.step()
+
+        # --- validation ---
+        if epoch % 20 == 0 or epoch == cfg["epochs"] - 1:
+            model.eval()
+            with torch.no_grad():
+                logits, _ = model(data)
+                val_acc = (
+                    (logits[data.val_mask].argmax(dim=-1) == data.y[data.val_mask])
+                ).float().mean().item()
+            hist.append(val_acc)
+            if val_acc > best_val:
+                best_val = val_acc
+                best_state = {k: v.detach().cpu() for k, v in model.state_dict().items()}
+            # early stopping
+            if len(hist) > cfg["patience"] and best_val >= max(hist[-cfg["patience"] :]):
+                break
+
+    # restore best
+    if best_state is not None:
+        model.load_state_dict(best_state)
+    return model, {"best_val": best_val, "val_curve": hist}
