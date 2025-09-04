@@ -26,7 +26,7 @@ if str(PKG_DIR.parent) not in sys.path:
 # ---------------------------------------------------------------------------
 # All experiment artefacts (images, CSVs, …) must be stored in exactly this
 # location as mandated by the autograder instructions.
-IMG_DIR = (PKG_DIR / "../.research/iteration9/images").resolve()
+IMG_DIR = (PKG_DIR / "../.research/iteration10/images").resolve()
 IMG_DIR.mkdir(parents=True, exist_ok=True)
 
 # Ensure cache directory exists ------------------------------------------------
@@ -85,10 +85,12 @@ os.environ["CAPGNN_DROPOUT"] = str(CFG["dropout"])
 
 def run_smoke() -> None:
     print("\n================  CI-SMOKE EXPERIMENT  ================")
-    print(textwrap.dedent("""
+    print(textwrap.dedent(
+        """
         Purpose: minimal end-to-end run that verifies the CAP-GNN stack can
         execute forward/backward on GPU in CI. Dataset=Cora, Depth=16, Epochs=5.
-    """))
+        """
+    ))
 
     results: List[Dict[str, Any]] = []
     for ds_name in CFG["datasets"]:
@@ -110,18 +112,22 @@ def run_smoke() -> None:
 
             t0 = time.perf_counter()
             losses, metrics, _ = train_one(
-                model, data, CFG["epochs"], CFG["patience"],
-                CFG["lr"], CFG["wd"], device
+                model, data, CFG["epochs"], CFG["patience"], CFG["lr"], CFG["wd"], device
             )
             t1 = time.perf_counter()
-            mem = (torch.cuda.max_memory_reserved() / 1024 ** 3) if torch.cuda.is_available() else 0.0
+            mem = (
+                torch.cuda.max_memory_reserved() / 1024 ** 3
+                if torch.cuda.is_available()
+                else 0.0
+            )
 
-            print(f"{variant:<7}  val={metrics['val']:.4f}  test={metrics['test']:.4f}  "
-                  f"rowdiff={metrics['rowdiff']:.4f}  time={t1 - t0:.1f}s  mem={mem:.2f}GB")
+            print(
+                f"{variant:<7}  val={metrics['val']:.4f}  test={metrics['test']:.4f}  "
+                f"rowdiff={metrics['rowdiff']:.4f}  time={t1 - t0:.1f}s  mem={mem:.2f}GB"
+            )
 
             # record
-            results.append({"dataset": ds_name, "variant": variant, **metrics,
-                             "time": t1 - t0, "mem": mem})
+            results.append({"dataset": ds_name, "variant": variant, **metrics, "time": t1 - t0, "mem": mem})
             # figure
             fig_path = IMG_DIR / f"training_loss_{variant}.pdf"
             save_loss_plot({variant: losses}, fig_path)
@@ -134,6 +140,7 @@ def run_smoke() -> None:
     for p in IMG_DIR.glob("*.pdf"):
         print("  ", p.relative_to(IMG_DIR.parent.parent))
     print("  ", summary_csv.relative_to(IMG_DIR.parent.parent))
+
 
 # ---------------------------------------------------------------------------
 #  Entrypoint ----------------------------------------------------------------
