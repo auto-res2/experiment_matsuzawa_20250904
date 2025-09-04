@@ -1,139 +1,177 @@
+"""src/train.py
+Module containing all model- and training-related code.
+"""
 from __future__ import annotations
-import time
-from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
+import math
 
-import timm
 import torch
-from torch.cuda.amp import GradScaler, autocast
-from torch.optim import AdamW
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.data import DataLoader
 
-from .evaluate import worst_group_acc, line_plot
-from .utils import set_seed
+# ------------------------------------------------------------------
+# Random Fourier Perturbation
+# ------------------------------------------------------------------
+class FourierPerturb(nn.Module):
+    """Applies a mild Fourier domain phase / amplitude jitter.
 
-__all__ = [
-    "create_model",
-    "Trainer",
-]
-
-
-def create_model(backbone: str, num_classes: int) -> torch.nn.Module:
-    """Factory for backbone models.
-
-    Parameters
-    ----------
-    backbone : str
-        Backbone name recognised by `timm`.
-    num_classes : int
-        Final classifier output dimension.
+    This is a direct copy of the logic from the original experimental
+    script but without runtime FFT shape errors.  The input is expected
+    to be in NCHW format with values in the typical [0, 1] or
+    [-1, 1] range.
     """
-    if backbone == "resnet18":
-        model = timm.create_model("resnet18", pretrained=True, num_classes=num_classes)
-    elif backbone == "resnet50_in21k":
-        model = timm.create_model("resnetv2_50x1_bit.goog_in21k", pretrained=True)
-        model.reset_classifier(num_classes)
-    elif backbone.startswith("vit"):
-        model = timm.create_model(backbone, pretrained=True)
-        model.reset_classifier(num_classes)
-    else:
-        raise ValueError(f"Unsupported backbone: {backbone}")
-    return model
+
+    def __init__(self, phase_max: float = math.pi / 5,
+                 amp_range: Tuple[float, float] = (0.8, 1.2)) -> None:
+        super().__init__()
+        self.phase_max = float(phase_max)
+        self.amp_lo, self.amp_hi = amp_range
+
+    @torch.no_grad()
+    def forward(self, x: torch.Tensor) -> torch.Tensor:  # pylint: disable=arguments-differ
+        # FFT and randomise phase/amplitude
+        x_fft = torch.fft.rfft2(x, norm="ortho")
+        phase = torch.angle(x_fft)
+        mag = torch.abs(x_fft)
+
+        phase = phase + (torch.rand_like(phase) * 2 - 1) * self.phase_max
+        mag = mag * (torch.rand_like(mag) * (self.amp_hi - self.amp_lo) + self.amp_lo)
+
+        x_new = torch.fft.irfft2(mag * torch.exp(1j * phase),
+                                 s=x.shape[-2:], norm="ortho")
+        return x_new.clamp(x.min(), x.max())
 
 
-class Trainer:
-    """Generic supervised training loop with optional AutoSpuSwap losses."""
+# ------------------------------------------------------------------
+# Dummy mask-bank (placeholder for SAM)
+# ------------------------------------------------------------------
+class _RandMaskBank:
+    """Returns a binary mask whose left half is 1 (object) and right half 0 (context)."""
 
-    def __init__(
-        self,
-        model: torch.nn.Module,
-        loaders: Dict[str, torch.utils.data.DataLoader],
-        cfg: Dict[str, Any],
-        autospu=None,
-        device: str = "cuda",
-    ) -> None:
-        self.model = model.to(device)
-        self.loaders = loaders
-        self.cfg = cfg
-        self.device = device
-        self.autospu = autospu
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:  # pylint: disable=unused-argument
+        mask = torch.zeros_like(x)
+        mask[..., :, : x.size(-1) // 2] = 1.0
+        return mask
 
-        self.opt = AdamW(
-            self.model.parameters(),
-            lr=cfg["optimizer"].get("lr", 1e-3),
-            weight_decay=cfg["optimizer"].get("weight_decay", 0.0),
-        )
-        self.scaler = GradScaler()
-        self.ce = torch.nn.CrossEntropyLoss()
-        self.mse = torch.nn.MSELoss()
-        self.history = {"train": [], "val": []}
 
-    # ------------------------------------------------------------------
-    def _iterate(self, train: bool = True):
-        """Run a single pass over *train* or *val* split."""
-        split = "train" if train else "val"
-        loader = self.loaders[split]
-        self.model.train(mode=train)
+MASK_BANK = _RandMaskBank()
 
-        total_loss, correct, total = 0.0, 0, 0
-        for batch in loader:
-            x, y, *_ = batch
-            x = x.to(self.device, non_blocking=True)
-            y = y.to(self.device, non_blocking=True)
 
-            with autocast():
-                logits = self.model(x)
-                loss = self.ce(logits, y)
+# ------------------------------------------------------------------
+# AutoSpuSwap — counterfactual generation + consistency loss
+# ------------------------------------------------------------------
+class AutoSpuSwap(nn.Module):
+    """Minimal, functional AutoSpuSwap implementation."""
 
-                # ---------- AutoSpuSwap consistency loss -------------
-                if train and self.autospu is not None:
-                    x_cf = self.autospu.make_counterfactual(x, y, None)
-                    logits_cf = self.model(x_cf)
-                    lam = self.cfg["autospu"]["lambda_consistency"]
-                    loss = loss + lam * self.mse(logits, logits_cf)
+    def __init__(self,
+                 swap_prob: float = 1.0,
+                 lambda_consistency: float = 1.0,
+                 lambda_fourier: float = 0.5,
+                 fourier_cfg: Dict[str, Any] | None = None,
+                 device: str = "cpu") -> None:
+        super().__init__()
+        self.swap_prob = float(swap_prob)
+        self.lambda_consistency = float(lambda_consistency)
+        self.lambda_fourier = float(lambda_fourier)
 
-            if train:
-                self.opt.zero_grad(set_to_none=True)
-                self.scaler.scale(loss).backward()
-                self.scaler.step(self.opt)
-                self.scaler.update()
+        # Fourier aug
+        phase_max = (fourier_cfg or {}).get("phase_max", math.pi / 5)
+        amp_lo = (fourier_cfg or {}).get("amp_min", 0.8)
+        amp_hi = (fourier_cfg or {}).get("amp_max", 1.2)
+        self.fourier = FourierPerturb(phase_max, (amp_lo, amp_hi)).to(device)
+        self.mse = nn.MSELoss()
 
-            total_loss += loss.item() * y.size(0)
-            correct += (logits.argmax(1) == y).sum().item()
-            total += y.size(0)
+    # --------------------------------------------------------------
+    # Public helpers
+    # --------------------------------------------------------------
+    @torch.no_grad()
+    def make_counterfactual(self, x: torch.Tensor) -> torch.Tensor:
+        if torch.rand(1, device=x.device) > self.swap_prob:
+            return x.clone()
+        x_cf = self._swap_context(x)
+        if self.lambda_fourier > 0:
+            x_cf = self.fourier(x_cf)
+        return x_cf
 
-        return total_loss / total, correct / total
+    def consistency_loss(self, logits: torch.Tensor, logits_cf: torch.Tensor) -> torch.Tensor:
+        return self.lambda_consistency * self.mse(logits, logits_cf)
 
-    # ------------------------------------------------------------------
-    def fit(self):
-        best_wg = 0.0
-        epochs = self.cfg.get("epochs", 1)
-        for ep in range(1, epochs + 1):
-            tl, ta = self._iterate(train=True)
-            vl, va = self._iterate(train=False)
-            self.history["train"].append(tl)
-            self.history["val"].append(vl)
+    # --------------------------------------------------------------
+    # Internal helpers
+    # --------------------------------------------------------------
+    @torch.no_grad()
+    def _swap_context(self, x: torch.Tensor) -> torch.Tensor:
+        # simple in-batch permutation
+        perm = torch.randperm(x.size(0), device=x.device)
+        mask = MASK_BANK(x).to(x.device)
+        return x * mask + x[perm] * (1 - mask)
 
-            # worst-group accuracy (validation)
-            y_all, pred_all, g_all = [], [], []
-            self.model.eval()
+
+# ------------------------------------------------------------------
+# Toy backbone for CI smoke test
+# ------------------------------------------------------------------
+class TinyConv(nn.Module):
+    """Extremely small CNN – keeps CI wall-clock short."""
+
+    def __init__(self, num_classes: int = 4) -> None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(3, 64, 3, 1, 1)
+        self.conv2 = nn.Conv2d(64, 64, 3, 1, 1)
+        self.fc = nn.Linear(64, num_classes)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:  # pylint: disable=arguments-differ
+        x = F.relu(self.conv1(x))
+        x = F.avg_pool2d(F.relu(self.conv2(x)), kernel_size=x.shape[-1])
+        x = x.flatten(1)
+        return self.fc(x)
+
+
+# ------------------------------------------------------------------
+# Generic helpers (train-test loop, seeding)
+# ------------------------------------------------------------------
+
+def set_seed(seed: int = 0) -> None:
+    torch.manual_seed(seed)
+    import numpy as np  # local import avoids requirements if not needed elsewhere
+
+    np.random.seed(seed)
+
+
+def run_epoch(model: nn.Module,
+              loader: DataLoader,
+              optimizer: torch.optim.Optimizer | None,
+              criterion: nn.Module,
+              autospu: AutoSpuSwap | None,
+              device: str) -> tuple[float, float]:
+    """Runs one training or validation epoch and returns (loss, accuracy)."""
+
+    is_train = optimizer is not None
+    model.train(is_train)
+
+    total, correct, loss_sum = 0, 0, 0.0
+
+    for x, y, *_ in loader:  # loader may optionally return extra fields (group/id)
+        x, y = x.to(device), y.to(device)
+
+        if is_train:
+            optimizer.zero_grad(set_to_none=True)
+
+        logits = model(x)
+        loss = criterion(logits, y)
+
+        if autospu is not None:
             with torch.no_grad():
-                for x, y, g, _ in self.loaders["val"]:
-                    logits = self.model(x.to(self.device))
-                    pred = logits.argmax(1).cpu()
-                    y_all.append(y)
-                    pred_all.append(pred)
-                    g_all.append(g)
+                x_cf = autospu.make_counterfactual(x)
+            logits_cf = model(x_cf)
+            loss = loss + autospu.consistency_loss(logits, logits_cf)
 
-            y_cat = torch.cat(y_all)
-            pred_cat = torch.cat(pred_all)
-            g_cat = torch.cat(g_all)
-            wg = worst_group_acc(pred_cat, y_cat, g_cat)
-            best_wg = max(best_wg, wg)
+        if is_train:
+            loss.backward()
+            optimizer.step()
 
-            print(
-                f"Epoch {ep:02d}  trLoss {tl:.3f}  valAcc {va * 100:.2f}%  WG-Acc {wg * 100:.2f}%"
-            )
+        loss_sum += loss.item() * y.size(0)
+        correct += (logits.argmax(1) == y).sum().item()
+        total += y.size(0)
 
-        # save learning-curve PDF in project root
-        line_plot(self.history["train"], "Training loss", "loss", "training_loss.pdf")
-        return best_wg
+    return loss_sum / total, correct / total

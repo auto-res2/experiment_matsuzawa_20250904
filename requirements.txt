@@ -1,13 +1,7 @@
 torch
 torchvision
-timm
 numpy
-pandas
 matplotlib
-tqdm
-pillow
+requests
 pyyaml
-segment_anything
-open_clip_torch
-diffusers
-pytest
+rich
