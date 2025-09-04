@@ -1,14 +1,15 @@
+from __future__ import annotations
 """src/evaluate.py
 Evaluation utilities & plotting extracted from the original experiment.
 """
-from __future__ import annotations
 import math, pathlib, random
 import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import spearmanr
 
-FIG_DIR = pathlib.Path(".research/iteration22/images")
+# Save all figures to the iteration-23 directory as required by the spec
+FIG_DIR = pathlib.Path(".research/iteration23/images")
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 __all__ = [
@@ -23,13 +24,13 @@ __all__ = [
 def accuracy(logits: torch.Tensor, y: torch.Tensor) -> float:
     return float((logits.argmax(-1) == y).float().mean())
 
-def _subsample(z: torch.Tensor, m:int = 256):
+def _subsample(z: torch.Tensor, m: int = 256):
     if z.size(0) <= m:
         return z
     idx = torch.randperm(z.size(0), device=z.device)[:m]
     return z[idx]
 
-def effective_rank(z: torch.Tensor, m:int = 256) -> float:
+def effective_rank(z: torch.Tensor, m: int = 256) -> float:
     z = _subsample(z.detach(), m).cpu()
     _, s, _ = torch.linalg.svd(z, full_matrices=False)
     p = s / s.sum()
@@ -45,7 +46,7 @@ def group_distance_ratio(z: torch.Tensor, y: torch.Tensor) -> float:
     inter = torch.pdist(centers).mean()
     return float(inter / intra)
 
-def ater(edge_index: torch.Tensor, n:int) -> float:
+def ater(edge_index: torch.Tensor, n: int) -> float:
     row, col = edge_index
     A = torch.zeros((n, n), device=row.device)
     A[row, col] = 1
@@ -65,7 +66,7 @@ def spearman(a: torch.Tensor, b: torch.Tensor):
 # Plot helpers
 # ---------------------------------------------------------------------------
 
-def plot_curve(curve, title:str, ylabel:str, file_name:str):
+def plot_curve(curve, title: str, ylabel: str, file_name: str):
     xs = list(range(1, len(curve) + 1))
     plt.figure()
     sns.lineplot(x=xs, y=curve, marker='o')
