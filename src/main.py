@@ -61,11 +61,22 @@ if "torchdata" not in sys.modules:
 #  Stub pydantic (GraphBolt expects BaseModel, Field, etc.) ------------------
 # ---------------------------------------------------------------------------
 if "pydantic" not in sys.modules:
+    # A lightweight metaclass that swallows any extra keyword arguments used
+    # in class definitions such as ``extra="allow"``.  This is enough to keep
+    # DGL/GraphBolt happy without requiring the heavy pydantic dependency.
+    class _DummyMeta(type):
+        def __new__(mcls, name, bases, namespace, **kwargs):  # noqa: D401
+            # Discard *kwargs* completely – they are pydantic-specific config.
+            return super().__new__(mcls, name, bases, dict(namespace))
+
+    class _DummyBase(metaclass=_DummyMeta):  # pylint: disable=too-few-public-methods
+        pass
+
     pydantic_mod = types.ModuleType("pydantic")
-    # Expose frequently imported symbols as no-ops
-    pydantic_mod.BaseModel = _NoOp
-    pydantic_mod.Field = _NoOp
-    pydantic_mod.validator = lambda *_, **__: (lambda f: f)  # decorator passthrough
+    pydantic_mod.BaseModel = _DummyBase
+    pydantic_mod.Field = lambda *_, **__: None  # type: ignore[assignment]
+    pydantic_mod.validator = lambda *_, **__: (lambda f: f)
+    pydantic_mod.__version__ = "2.0"  # Satisfy version checks inside GraphBolt
     sys.modules["pydantic"] = pydantic_mod
 
 # ---------------------------------------------------------------------------
@@ -83,7 +94,7 @@ from .evaluate import run_depth, run_noise, run_papers
 CFG_DEFAULT_YAML = """
 common:
   device: cuda            # auto-fallback handled in code
-  output_root: .research/iteration10/images
+  output_root: .research/iteration11/images
   seeds: [11, 22, 33, 44, 55]
 train:
   lr: 3e-3
@@ -114,10 +125,10 @@ if CONFIG_PATH.exists():
 else:
     CFG = yaml.safe_load(CFG_DEFAULT_YAML)
 
-# -------- ensure image path complies with iteration10 requirement ----------
-ITER10_PATH = ".research/iteration10/images"
-if CFG["common"].get("output_root", "") != ITER10_PATH:
-    CFG["common"]["output_root"] = ITER10_PATH
+# -------- ensure image path complies with iteration11 requirement ----------
+ITER11_PATH = ".research/iteration11/images"
+if CFG["common"].get("output_root", "") != ITER11_PATH:
+    CFG["common"]["output_root"] = ITER11_PATH
 
 # -------- device fallback ---------------------------------------------------
 if CFG["common"]["device"] == "cuda" and not torch.cuda.is_available():
