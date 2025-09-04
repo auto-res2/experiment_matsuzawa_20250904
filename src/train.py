@@ -28,6 +28,15 @@ DEVICE: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cp
 DTYPE = torch.bfloat16 if torch.cuda.is_available() else torch.float32
 
 
+# -----------------------------------------------------------------------------
+# Helper – cast config values that YAML may have parsed as strings
+# -----------------------------------------------------------------------------
+
+def _as_float(x: Any) -> float:
+    """Cast *x* to float if it is a string (YAML sometimes treats 3e-4 as str)."""
+    return float(x) if isinstance(x, str) else x  # type: ignore[arg-type]
+
+
 def set_seed(seed: int) -> None:
     """Fix all random seeds for full reproducibility."""
     import random, numpy as np  # local import – keeps global namespace clean
@@ -153,8 +162,8 @@ def run_waterbirds() -> None:
 
             optimiser = torch.optim.AdamW(
                 model.parameters(),
-                lr=CONFIG["training"]["lr"],
-                weight_decay=CONFIG["training"]["weight_decay"],
+                lr=_as_float(CONFIG["training"]["lr"]),
+                weight_decay=_as_float(CONFIG["training"]["weight_decay"]),
             )
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 optimiser, T_max=CONFIG["training"]["epochs"]
