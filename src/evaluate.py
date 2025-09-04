@@ -55,12 +55,12 @@ def line_plot(values, title: str, ylabel: str, out_pdf: str | Path):
     """Utility for saving a simple line plot.
 
     All experiment images are redirected to the mandatory directory
-    `.research/iteration8/images` to comply with the evaluation rules.
+    `.research/iteration9/images` to comply with the evaluation rules.
     """
     # ------------------------------------------------------------------
     # Ensure the canonical image directory exists
     # ------------------------------------------------------------------
-    img_dir = Path(".research/iteration8/images")
+    img_dir = Path(".research/iteration9/images")
     img_dir.mkdir(parents=True, exist_ok=True)
 
     # Only keep the file name portion of *out_pdf* and store it under
