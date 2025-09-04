@@ -16,18 +16,36 @@ __all__ = [
 
 _DEF_STYLE = dict(lw=2)
 
-
+# -----------------------------------------------------------------------------
 # All figures must be saved to this directory as per the build rules
-_IMAGES_DIR = ".research/iteration2/images"
+# -----------------------------------------------------------------------------
+_IMAGES_DIR = ".research/iteration3/images"
 
 
-def plot_curves(train_loss: list[float], val_loss: list[float], out: str = "training_loss.pdf") -> None:  # noqa: E501
+def _ensure_images_dir() -> None:
+    """Create the shared images directory if it does not yet exist."""
+    import pathlib
+
+    path = pathlib.Path(_IMAGES_DIR)
+    path.mkdir(parents=True, exist_ok=True)
+
+
+def plot_curves(
+    train_loss: list[float],
+    val_loss: list[float],
+    out: str = "training_loss.pdf",
+) -> None:  # noqa: E501
     """Plot *train* vs *val* loss curves and save them to *out*.
 
-    The figure is stored directly in ``.research/iteration2/images`` if
-    that directory exists, otherwise next to the current working
-    directory.
+    The figure is stored directly in ``.research/iteration3/images`` as
+    required by the build rules.  The directory is created on-the-fly if
+    it does not already exist.
     """
+    _ensure_images_dir()
+    import pathlib
+
+    out_path = pathlib.Path(_IMAGES_DIR) / out
+
     epochs = np.arange(1, len(train_loss) + 1)
 
     plt.figure(figsize=(4, 3))
@@ -41,12 +59,6 @@ def plot_curves(train_loss: list[float], val_loss: list[float], out: str = "trai
     plt.ylabel("loss")
     plt.legend()
 
-    import pathlib
-
-    p = pathlib.Path(_IMAGES_DIR)
-    if p.is_dir():  # pragma: no cover – optional convenience
-        out = str(p / out)
-
-    plt.savefig(out, bbox_inches="tight")
-    print(f"[FIG] training_loss → {out}")
+    plt.savefig(out_path, bbox_inches="tight")
+    print(f"[FIG] training_loss → {out_path}")
     plt.close()

@@ -82,11 +82,17 @@ class Trainer:
         # Optimiser & mixed precision -----------------------------
         trainable_params = [p for p in self.model.parameters() if p.requires_grad]
         opt_cfg = cfg["optimizer"]
+
+        # YAML may encode numbers as *strings* when quoted.  Convert here
+        # to avoid type-errors in the optimiser constructor (see issue #42).
+        lr_raw = opt_cfg.get("lr", 3e-4)
+        lr: float = float(lr_raw)  # robust to already-float inputs
+
         self.opt = AdamW(
             trainable_params,
-            lr=opt_cfg.get("lr", 3e-4),
-            betas=opt_cfg.get("betas", (0.9, 0.999)),
-            weight_decay=opt_cfg.get("weight_decay", 0.0),
+            lr=lr,
+            betas=tuple(opt_cfg.get("betas", (0.9, 0.999))),
+            weight_decay=float(opt_cfg.get("weight_decay", 0.0)),
         )
         self.scaler = GradScaler()
 
@@ -146,7 +152,7 @@ class Trainer:
                 if train and getattr(self.autospu, "enabled", False):
                     x_cf = self.autospu.make_counterfactual(x, y, idx)
                     logits_cf = self.model(x_cf)
-                    lam = self.cfg["autospu"].get("lambda_consistency", 1.0)
+                    lam = float(self.cfg["autospu"].get("lambda_consistency", 1.0))
                     loss = loss + lam * self.mse(logits, logits_cf)
 
             # Back-prop only in training mode ----------------------
