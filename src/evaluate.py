@@ -12,7 +12,7 @@ from .train import DEVICE  # reuse the same device constant
 # ---------------------------------------------------------
 #  FIGURE OUTPUT DIRECTORY – MUST MATCH SPECIFICATION
 # ---------------------------------------------------------
-_IMG_DIR = Path(".research/iteration2/images")
+_IMG_DIR = Path(".research/iteration3/images")
 _IMG_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------
