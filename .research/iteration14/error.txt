@@ -1,0 +1,11 @@
+  Running command git clone --filter=blob:none --quiet https://github.com/openai/CLIP.git /tmp/pip-req-build-e7p07cyg
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 15, in <module>
+    from .evaluate import run_diagnostics
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/evaluate.py", line 18, in <module>
+    from .train import ContextSwapper, DTYPE, DEVICE
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py", line 24, in <module>
+    from .evaluate import (
+ImportError: cannot import name 'compute_wg_acc' from partially initialized module 'src.evaluate' (most likely due to a circular import) (/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/evaluate.py)
