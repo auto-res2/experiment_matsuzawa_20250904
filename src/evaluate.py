@@ -17,10 +17,14 @@ __all__ = [
 _DEF_STYLE = dict(lw=2)
 
 
+# All figures must be saved to this directory as per the build rules
+_IMAGES_DIR = ".research/iteration2/images"
+
+
 def plot_curves(train_loss: list[float], val_loss: list[float], out: str = "training_loss.pdf") -> None:  # noqa: E501
     """Plot *train* vs *val* loss curves and save them to *out*.
 
-    The figure is stored directly in ``.research/iteration1/images`` if
+    The figure is stored directly in ``.research/iteration2/images`` if
     that directory exists, otherwise next to the current working
     directory.
     """
@@ -37,15 +41,11 @@ def plot_curves(train_loss: list[float], val_loss: list[float], out: str = "trai
     plt.ylabel("loss")
     plt.legend()
 
-    target_dir = ".research/iteration1/images"
-    try:
-        import pathlib
+    import pathlib
 
-        p = pathlib.Path(target_dir)
-        if p.is_dir():  # pragma: no cover – optional convenience
-            out = str(p / out)
-    except Exception:  # pragma: no cover – best-effort only
-        pass
+    p = pathlib.Path(_IMAGES_DIR)
+    if p.is_dir():  # pragma: no cover – optional convenience
+        out = str(p / out)
 
     plt.savefig(out, bbox_inches="tight")
     print(f"[FIG] training_loss → {out}")

@@ -10,7 +10,7 @@ from the original single-file script (SAM masks, context swap, Fourier
 perturbation, diffusion in-painting …)."""
 from __future__ import annotations
 
-import time, collections, math, contextlib
+import time, collections, math, contextlib, warnings
 from typing import Dict, Any
 
 import numpy as np
@@ -41,6 +41,13 @@ class AutoSpuWrapper:
 
     def __init__(self, enabled: bool = False):
         self.enabled = enabled
+        if self.enabled:
+            warnings.warn(
+                "AutoSpuSwap pipeline not yet implemented – falling back to "
+                "identity counter-factuals. Set autospu.enabled: false in the "
+                "YAML config to silence this warning.",
+                UserWarning,
+            )
 
     def make_counterfactual(self, x: torch.Tensor, *_, **__) -> torch.Tensor:  # noqa: D401,E501
         """Return a counter-factual version of *x*.
@@ -49,13 +56,10 @@ class AutoSpuWrapper:
         method signature mirrors the original call in the experimental
         script: ``make_counterfactual(x, y, idx)``.
         """
-        if not self.enabled:
-            # Return a detached *clone* so that the subsequent MSE loss
-            # still has valid gradients w.r.t. *x*.
-            return x.clone().detach()
-        raise NotImplementedError(
-            "Full AutoSpuSwap pipeline not yet ported – set 'enabled:
-            false' in the YAML config or extend AutoSpuWrapper.")
+        # At the moment we always perform a *no-op* to keep the training
+        # code functional.  A detached clone ensures gradients still flow
+        # correctly for the main classification loss.
+        return x.clone().detach()
 
 
 class Trainer:
