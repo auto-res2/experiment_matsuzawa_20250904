@@ -3,18 +3,63 @@ Model architectures and the training step used across experiments.
 """
 from __future__ import annotations
 
-from typing import List, Dict, Any
+# ---------------------------------------------------------------------------
+# 0)  DEPENDENCY HOT-FIX ------------------------------------------------------
+# ---------------------------------------------------------------------------
+# DGL (>=2.1) internally relies on the `IterDataPipe` class from the optional
+# `torchdata` package.  Unfortunately, at the time of writing, some Python/torch
+# version combinations ship a trimmed-down wheel of torchdata that does **not**
+# expose the expected sub-module `torchdata.datapipes.iter`.  This results in a
+# `ModuleNotFoundError` during the very first `import dgl`, long before any of
+# our project code runs.
+#
+# To keep the overall environment lightweight and to avoid version pinning
+# war-stories, we provide a tiny run-time stub that fully satisfies DGL’s needs
+# (it only ever touches `IterDataPipe` for type annotations).  If a fully-
+# featured torchdata installation *is* present, the following block becomes a
+# harmless no-op.
 
-import torch
-from torch import nn
-import torch.nn.functional as F
-from torch.optim import Adam
-from torch.cuda.amp import GradScaler, autocast
-import dgl
+import sys
+import types
+
+try:
+    # The normal case – nothing to patch.
+    from torchdata.datapipes.iter import IterDataPipe  # noqa: F401
+except ModuleNotFoundError:  # pragma: no cover – executed only in broken envs
+    torchdata_mod = sys.modules.get("torchdata", types.ModuleType("torchdata"))
+    # `torchdata.datapipes` parent package ------------------------------------------------
+    datapipes_mod = types.ModuleType("torchdata.datapipes")
+    # `torchdata.datapipes.iter` sub-package ---------------------------------------------
+    iter_mod = types.ModuleType("torchdata.datapipes.iter")
+
+    class _IterDataPipe:  # minimal stand-in (no functionality required)
+        pass
+
+    iter_mod.IterDataPipe = _IterDataPipe
+    datapipes_mod.iter = iter_mod
+
+    # Register stub modules so that future imports succeed ------------------------------
+    torchdata_mod.datapipes = datapipes_mod
+    sys.modules.setdefault("torchdata", torchdata_mod)
+    sys.modules["torchdata.datapipes"] = datapipes_mod
+    sys.modules["torchdata.datapipes.iter"] = iter_mod
+
+# ---------------------------------------------------------------------------
+# Standard library & third-party imports (after the patch) -------------------
+# ---------------------------------------------------------------------------
+from typing import List, Dict, Any  # noqa: E402
+
+import torch  # noqa: E402
+from torch import nn  # noqa: E402
+import torch.nn.functional as F  # noqa: E402
+from torch.optim import Adam  # noqa: E402
+from torch.cuda.amp import GradScaler, autocast  # noqa: E402
+import dgl  # noqa: E402
 
 # ----------------------------------------------------------------------------
 # 1)  MODEL COMPONENTS --------------------------------------------------------
 # ----------------------------------------------------------------------------
+
 
 class GateMLP(nn.Module):
     """Tiny MLP that outputs (K+1) logits per node."""
@@ -47,18 +92,18 @@ class AdaPropConv(nn.Module):
 
     def forward(self, g: dgl.DGLGraph, x: torch.Tensor, sparse_powers: List[torch.Tensor]):
         # x: (N, in_dim)
-        h = self.linear(x)                                  # (N, out_dim)
-        logits = self.gate(h)                               # (N, K+1)
+        h = self.linear(x)  # (N, out_dim)
+        logits = self.gate(h)  # (N, K+1)
         pi = F.gumbel_softmax(logits, tau=self.temperature, hard=False, dim=-1)  # (N,K+1)
 
         # aggregate K-hop messages
         agg: List[torch.Tensor] = []
         for k in range(self.K + 1):
-            msg = torch.sparse.mm(sparse_powers[k], x)      # (N, in_dim)
+            msg = torch.sparse.mm(sparse_powers[k], x)  # (N, in_dim)
             msg = self.linear(msg)
             agg.append(msg.unsqueeze(2))
-        agg = torch.cat(agg, dim=2)                         # (N, out_dim, K+1)
-        out = (agg * pi.unsqueeze(1)).sum(dim=2)            # (N, out_dim)
+        agg = torch.cat(agg, dim=2)  # (N, out_dim, K+1)
+        out = (agg * pi.unsqueeze(1)).sum(dim=2)  # (N, out_dim)
 
         # ---------------- Regularizer --------------------
         if self.training and self.lambda_reg > 0.0:
@@ -86,12 +131,14 @@ class AdaPropGCN(nn.Module):
         super().__init__()
         layers: List[nn.Module] = []
         for i in range(depth):
-            layers.append(AdaPropConv(
-                in_dim if i == 0 else hidden,
-                hidden if i < depth - 1 else num_classes,
-                K=K,
-                lambda_reg=lambda_reg,
-            ))
+            layers.append(
+                AdaPropConv(
+                    in_dim if i == 0 else hidden,
+                    hidden if i < depth - 1 else num_classes,
+                    K=K,
+                    lambda_reg=lambda_reg,
+                )
+            )
             if i < depth - 1:
                 layers.append(nn.ReLU())
         self.net = nn.Sequential(*layers)
