@@ -2,9 +2,12 @@ torch
 torchvision
 timm
 numpy
+pandas
 matplotlib
-pyyaml
-datasets
+tqdm
 pillow
-segment-anything
+pyyaml
+segment_anything
 open_clip_torch
+diffusers
+pytest

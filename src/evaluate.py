@@ -1,64 +1,65 @@
-# src/evaluate.py
-"""Evaluation & plotting helpers."""
 from __future__ import annotations
+from pathlib import Path
+from typing import Dict, Any, List
 
-import numpy as np
+import json
+
 import matplotlib
 
-# Head-less backend is mandatory on many servers (no DISPLAY)
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402  pylint: disable=wrong-import-position
+matplotlib.use("Agg")  # head-less backend for servers
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
 
 __all__ = [
-    "plot_curves",
+    "worst_group_acc",
+    "log_results",
+    "line_plot",
 ]
 
 
-_DEF_STYLE = dict(lw=2)
+# ---------------------------------------------------------------------
+#   Metrics & Logging
+# ---------------------------------------------------------------------
 
-# -----------------------------------------------------------------------------
-# All figures must be saved to this directory as per the build rules
-# -----------------------------------------------------------------------------
-_IMAGES_DIR = ".research/iteration4/images"  # ← updated to *iteration4*
+def worst_group_acc(pred: torch.Tensor, y: torch.Tensor, g: torch.Tensor) -> float:
+    """Return worst-group accuracy.
 
-
-def _ensure_images_dir() -> None:
-    """Create the shared images directory if it does not yet exist."""
-    import pathlib
-
-    path = pathlib.Path(_IMAGES_DIR)
-    path.mkdir(parents=True, exist_ok=True)
-
-
-def plot_curves(
-    train_loss: list[float],
-    val_loss: list[float],
-    out: str = "training_loss.pdf",
-) -> None:  # noqa: E501
-    """Plot *train* vs *val* loss curves and save them to *out*.
-
-    The figure is stored directly in ``.research/iteration4/images`` as
-    required by the build rules.  The directory is created on-the-fly if
-    it does not already exist.
+    Parameters
+    ----------
+    pred : torch.Tensor
+        Predictions (N,).
+    y : torch.Tensor
+        Ground-truth labels (N,).
+    g : torch.Tensor
+        Group indicators (N,).
     """
-    _ensure_images_dir()
-    import pathlib
+    acc: List[float] = []
+    for grp in torch.unique(g):
+        idx = g == grp
+        acc.append((pred[idx] == y[idx]).float().mean().item())
+    return float(min(acc)) if acc else 0.0
 
-    out_path = pathlib.Path(_IMAGES_DIR) / out
 
-    epochs = np.arange(1, len(train_loss) + 1)
+def log_results(path: Path, dic: Dict[str, Any]):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(dic, f, indent=2)
 
+
+# ---------------------------------------------------------------------
+#   Plotting helpers
+# ---------------------------------------------------------------------
+
+def line_plot(values, title: str, ylabel: str, out_pdf: str | Path):
     plt.figure(figsize=(4, 3))
-    plt.plot(epochs, train_loss, label="train", **_DEF_STYLE)
-    plt.plot(epochs, val_loss, label="val", **_DEF_STYLE)
-
-    for e, v in zip(epochs, val_loss):
-        plt.text(e, v + 0.01, f"{v:.2f}", fontsize=6, ha="center")
-
+    plt.plot(values, lw=2, label=ylabel)
+    for i, v in enumerate(values):
+        plt.text(i, v, f"{v:.2f}", fontsize=6, ha="center")
+    plt.title(title)
     plt.xlabel("epoch")
-    plt.ylabel("loss")
+    plt.ylabel(ylabel)
     plt.legend()
-
-    plt.savefig(out_path, bbox_inches="tight")
-    print(f"[FIG] training_loss → {out_path}")
+    plt.tight_layout()
+    plt.savefig(str(out_pdf), bbox_inches="tight")
     plt.close()
