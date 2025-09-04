@@ -60,7 +60,7 @@ def ater(edge_index: torch.Tensor, num_nodes: int) -> float:
 #  Plotting helpers
 # -----------------------------------------------------------------------------
 
-_FIG_DIR = Path(".research/iteration6/images")
+_FIG_DIR = Path(".research/iteration7/images")
 _FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -93,8 +93,18 @@ def evaluate_model(model, data, feats: List[torch.Tensor]) -> Dict[str, Any]:
     ater_val = ater(data.edge_index, data.num_nodes)
 
     # plots
-    _save_line_plot(gdr_vals, f"GDR – {data.name if hasattr(data,'name') else ''}", "GDR", f"gdr_{data.name}.pdf")
-    _save_line_plot(er_vals, f"EffRank – {data.name if hasattr(data,'name') else ''}", "EffRank", f"er_{data.name}.pdf")
+    _save_line_plot(
+        gdr_vals,
+        f"GDR – {data.name if hasattr(data,'name') else ''}",
+        "GDR",
+        f"gdr_{data.name}.pdf",
+    )
+    _save_line_plot(
+        er_vals,
+        f"EffRank – {data.name if hasattr(data,'name') else ''}",
+        "EffRank",
+        f"er_{data.name}.pdf",
+    )
 
     return {
         "acc": acc,
