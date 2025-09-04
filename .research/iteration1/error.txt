@@ -1,0 +1,21 @@
+/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py:85: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler() if device.type == "cuda" else None
+/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py:91: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=scaler is not None):
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 123, in <module>
+    main()
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 119, in main
+    run_experiment1()
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 90, in run_experiment1
+    acc, *_ = evaluate(model, data)
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/evaluate.py", line 48, in evaluate
+    efrs.append(effective_rank(h))
+                ^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/evaluate.py", line 32, in effective_rank
+    return math.exp(h).item() / z.size(1)
+           ^^^^^^^^^^^^^^^^
+AttributeError: 'float' object has no attribute 'item'
