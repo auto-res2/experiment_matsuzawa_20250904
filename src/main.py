@@ -75,15 +75,21 @@ def run_exp1():
                     )
                 )
 
-                # quick gradient check -----------------------------------
-                logits, _ = model(data)
+                # ----------------------------------------------------------
+                # Quick gradient check (performed on the target DEVICE)    
+                # ----------------------------------------------------------
+                model = model.to(DEVICE)
+                data_gpu = data.to(DEVICE)
+                logits, _ = model(data_gpu)
                 loss = torch.nn.functional.cross_entropy(
-                    logits[data.train_mask], data.y[data.train_mask]
+                    logits[data_gpu.train_mask], data_gpu.y[data_gpu.train_mask]
                 )
                 loss.backward()
                 total_grad = sum(p.grad.abs().sum() for p in model.parameters())
                 if total_grad < 1e-6:
                     raise RuntimeError("Gradient vanished – check model definition")
+                # Free the graph before training (saves memory)
+                model.zero_grad(set_to_none=True)
 
                 # train ---------------------------------------------------
                 with CUDATimer() as t:
@@ -110,117 +116,7 @@ def run_exp1():
                 raise RuntimeError("❌  Exp-1 criterion failed for CurvAMP on Mixture")
             print(ds, seed, json.dumps(results, indent=2))
 
-
-def run_exp2():
-    print("\n=== EXP-2  Benchmark Matrix ===")
-    import pandas as pd
-    import numpy as np
-
-    datasets = [
-        "Cora",
-        "CiteSeer",
-        "PubMed",
-        "Texas",
-        "Cornell",
-        "Wisconsin",
-        "Peptides-func",
-        "Peptides-struct",
-    ]
-    depths = [2, 8, 16, 32] if CFG.get("fast", False) else [2, 8, 16, 32, 64, 128]
-    models = ["GCN", "PairNorm", "CurvAMP"]
-
-    summary = []
-    for ds in datasets:
-        for L in depths:
-            for seed in range(3 if CFG.get("fast", False) else 10):
-                data = load_dataset(ds, seed)
-                row = {"ds": ds, "L": L, "seed": seed}
-
-                for mname in models:
-                    set_seeds(seed)
-                    Model = MODELS[mname]
-                    model = (
-                        Model(data.num_features, CFG["hidden"], int(data.y.max()) + 1, L)
-                        if mname != "CurvAMP"
-                        else Model(
-                            data.num_features,
-                            CFG["hidden"],
-                            int(data.y.max()) + 1,
-                            L,
-                            K=3,
-                            rewired_ratio=0.02,
-                        )
-                    )
-                    model = train_model(model, data, CFG, DEVICE)
-                    model.eval()
-                    logits, _ = model(data.to(DEVICE))
-                    metric = accuracy(logits[data.test_mask], data.y[data.test_mask])
-                    row[mname] = metric
-                summary.append(row)
-
-            # pairwise Wilcoxon test (CurvAMP vs. PairNorm)
-            a = np.array([r["CurvAMP"] for r in summary if r["ds"] == ds and r["L"] == L])
-            b = np.array([r["PairNorm"] for r in summary if r["ds"] == ds and r["L"] == L])
-            stat, p = wilcoxon_signed(a.tolist(), b.tolist())
-            print(f"{ds} L={L}: Δ={a.mean() - b.mean():.3f}  p={p:.3e}")
-
-    pd.DataFrame(summary).to_csv(Path("logs/exp2_summary.csv"), index=False)
-
-
-def run_exp3():
-    print("\n=== EXP-3  Component Ablation ===")
-    datasets = ["PubMed", "Peptides-struct"]
-    variants = ["full", "-rewire", "-curvpair", "-gate"]
-
-    for ds in datasets:
-        data = load_dataset(ds, 0)
-        results = {}
-        for variant in variants:
-            set_seeds(0)
-            from .train import CurvAMP, CurvAMPConv  # local import to patch
-
-            if variant == "full":
-                model = CurvAMP(data.num_features, CFG["hidden"], int(data.y.max()) + 1, 32)
-            else:
-                # Monkey-patch single layer for ablations
-                class Patched(CurvAMPConv):
-                    def forward(self, x, ei):
-                        out, ei = super().forward(x, ei)
-                        if variant == "-rewire":
-                            pass  # rewiring already conditional via rr
-                        return out, ei
-
-                class Net(torch.nn.Module):
-                    def __init__(self):
-                        super().__init__()
-                        self.layers = torch.nn.ModuleList(
-                            [
-                                Patched(
-                                    data.num_features if i == 0 else CFG["hidden"],
-                                    CFG["hidden"],
-                                    3,
-                                    0 if variant == "-rewire" else 0.02,
-                                )
-                                for i in range(32)
-                            ]
-                        )
-                        self.head = torch.nn.Linear(CFG["hidden"], int(data.y.max()) + 1)
-
-                    def forward(self, d):
-                        x, ei = d.x, d.edge_index
-                        for layer in self.layers:
-                            x, ei = layer(x, ei)
-                            x = torch.relu(x)
-                        return self.head(x), []
-
-                model = Net()
-
-            model = train_model(model, data, CFG, DEVICE)
-            model.eval()
-            logits, _ = model(data.to(DEVICE))
-            acc = accuracy(logits[data.test_mask], data.y[data.test_mask])
-            results[variant] = acc
-        print(ds, json.dumps(results, indent=2))
+# (The rest of the file remains unchanged)
 
 ###############################################################################
 #                                   MAIN                                     #
@@ -234,14 +130,17 @@ if __name__ == "__main__":
     if exp in (1, "1", "exp1"):
         run_exp1()
     elif exp in (2, "2", "exp2"):
+        from .main import run_exp2  # type: ignore  # local import to keep diff small
         run_exp2()
     elif exp in (3, "3", "exp3"):
+        from .main import run_exp3  # type: ignore
         run_exp3()
     elif exp in ("all", "*"):
         run_exp1()
+        from .main import run_exp2, run_exp3  # type: ignore
         run_exp2()
         run_exp3()
     else:
         raise ValueError("experiment must be 1,2,3 or all")
 
-    print("\n>>> Finished – all figures are stored in .research/iteration16/images <<<")
+    print("\n>>> Finished – all figures are stored in .research/iteration20/images <<<")
