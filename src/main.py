@@ -15,8 +15,12 @@ from torch_geometric.data import Data
 
 from . import preprocess as pp
 from .train import (
-    GCNNet, GATNet, APPNPNet, norm_factory,
-    run_training, set_global_seeds,
+    GCNNet,
+    GATNet,
+    APPNPNet,
+    norm_factory,
+    run_training,
+    set_global_seeds,
 )
 from .evaluate import save_lineplot
 
@@ -75,8 +79,15 @@ def experiment1_depth(cfg: GlobalConfig, frodo_h: FRODOHyper):
                 if dname == "Pubmed":
                     summary[variant].append(metrics["test_acc"])
     # plot on Pubmed
-    save_lineplot(depths, summary, "Depth (layers)", "Accuracy",
-                  "Accuracy vs Depth – Pubmed", "accuracy_pubmed.pdf")
+    save_lineplot(
+        depths,
+        summary,
+        "Depth (layers)",
+        "Accuracy",
+        "Accuracy vs Depth – Pubmed",
+        "accuracy_pubmed.pdf",
+    )
+
 
 def experiment2_denoise(cfg: GlobalConfig, frodo_h: FRODOHyper):
     datasets = ["Cora", "Citeseer"]
@@ -100,20 +111,30 @@ def experiment2_denoise(cfg: GlobalConfig, frodo_h: FRODOHyper):
             for variant in variants:
                 nf = norm_factory(variant, cfg.hidden, frodo_h)
                 model = GATNet(in_dim, cfg.hidden // 8, out_dim, 16, 8, cfg.dropout, nf)
-                _, metrics = run_training(model, data, split_idx, cfg,
-                                          f"Exp2-{dname}-corr{c}-{variant}")
+                _, metrics = run_training(
+                    model, data, split_idx, cfg, f"Exp2-{dname}-corr{c}-{variant}"
+                )
                 acc_table[variant].append(metrics["test_acc"])
             data.x = x_orig  # restore
         # plot per-dataset
-        save_lineplot(corruption, {v: acc_table[v] for v in variants},
-                      "Feature corruption", "Accuracy",
-                      f"Accuracy vs corruption – {dname}", f"accuracy_{dname.lower()}.pdf")
+        save_lineplot(
+            corruption,
+            {v: acc_table[v] for v in variants},
+            "Feature corruption",
+            "Accuracy",
+            f"Accuracy vs corruption – {dname}",
+            f"accuracy_{dname.lower()}.pdf",
+        )
+
 
 def experiment3_scale(cfg: GlobalConfig, frodo_h: FRODOHyper):
     # ogbn-papers100M – may fail on low memory, be graceful
     try:
         from ogb.nodeproppred import PygNodePropPredDataset
-        ds = PygNodePropPredDataset(name="ogbn-papers100M", root=os.path.join(cfg.data_root, "ogbn-papers100M"))
+
+        ds = PygNodePropPredDataset(
+            name="ogbn-papers100M", root=os.path.join(cfg.data_root, "ogbn-papers100M")
+        )
     except Exception as e:  # pragma: no cover – runtime env dependent
         print("Skipping ogbn-papers100M →", e)
         ds = None
@@ -125,12 +146,15 @@ def experiment3_scale(cfg: GlobalConfig, frodo_h: FRODOHyper):
         run_training(model, data, split_idx, cfg, "Exp3A-papers100M-frodo")
 
     # synthetic CSBM heterophily sweep (small – always runs)
-    import networkx as nx
+    import networkx as nx  # noqa: F401  – needed for stochastic_block_model
     from networkx.generators.community import stochastic_block_model
+
     n = 100_000
     p_in = 0.01
     ratios = [5, 2, 1, 0.5]
-    acc_vs_ratio: Dict[str, List[float]] = {v: [] for v in ["vanilla", "contranorm", "dropedge", "frodo"]}
+    acc_vs_ratio: Dict[str, List[float]] = {
+        v: [] for v in ["vanilla", "contranorm", "dropedge", "frodo"]
+    }
     for r in ratios:
         p_out = p_in / r
         sizes = [n // 2, n - n // 2]
@@ -142,11 +166,17 @@ def experiment3_scale(cfg: GlobalConfig, frodo_h: FRODOHyper):
         y = torch.tensor([0] * sizes[0] + [1] * sizes[1])
         data = Data(x=x, edge_index=edge_index, y=y)
         idx = torch.randperm(n)
-        split_idx = {"train": idx[: n // 2], "valid": idx[n // 2 : 3 * n // 4], "test": idx[3 * n // 4 :]}
+        split_idx = {
+            "train": idx[: n // 2],
+            "valid": idx[n // 2 : 3 * n // 4],
+            "test": idx[3 * n // 4 :],
+        }
         for variant in acc_vs_ratio.keys():
             nf = norm_factory(variant, cfg.hidden, frodo_h)
             model = GCNNet(cfg.hidden, cfg.hidden, 2, 32, cfg.dropout, nf)
-            _, metrics = run_training(model, data, split_idx, cfg, f"Exp3B-CSBM-r{r}-{variant}")
+            _, metrics = run_training(
+                model, data, split_idx, cfg, f"Exp3B-CSBM-r{r}-{variant}"
+            )
             acc_vs_ratio[variant].append(metrics["test_acc"])
     save_lineplot(ratios, acc_vs_ratio, "p/q", "Accuracy", "Heterophily sweep – CSBM", "accuracy_csbm.pdf")
 
@@ -166,7 +196,8 @@ FRODO_HYPER = FRODOHyper(**_cfg_dict["frodo"])
 
 def main():
     os.makedirs(GLOBAL_CFG.data_root, exist_ok=True)
-    os.makedirs("figures", exist_ok=True)
+    # Ensure the mandated image directory exists
+    os.makedirs(".research/iteration2/images", exist_ok=True)
     set_global_seeds(GLOBAL_CFG.seeds[0])
 
     print("\n================ EXPERIMENT 1 – Depth scaling ================")
