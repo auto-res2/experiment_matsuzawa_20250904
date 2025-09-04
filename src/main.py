@@ -1,8 +1,8 @@
+from __future__ import annotations
 """src/main.py
 Entry-point for CAP-GNN experiments.
 Run via:   python -m src.main
 """
-from __future__ import annotations
 import os, sys, random, time, textwrap
 from pathlib import Path
 from typing import Any, Dict, List
@@ -22,8 +22,8 @@ if str(PKG_DIR.parent) not in sys.path:
     sys.path.insert(0, str(PKG_DIR.parent))
 
 # Project directories --------------------------------------------------------
-(PKG_DIR / "../.research/iteration7/images").resolve().mkdir(parents=True, exist_ok=True)
-FIG_DIR = (PKG_DIR / "../.research/iteration7/images").resolve()
+IMG_DIR = (PKG_DIR / "../.research/iteration8/images").resolve()
+IMG_DIR.mkdir(parents=True, exist_ok=True)
 (PKG_DIR / "cache").mkdir(exist_ok=True)
 
 # Local imports (after path fix) --------------------------------------------
@@ -115,17 +115,17 @@ def run_smoke() -> None:
             results.append({"dataset": ds_name, "variant": variant, **metrics,
                              "time": t1 - t0, "mem": mem})
             # figure
-            fig_path = FIG_DIR / f"training_loss_{variant}.pdf"
+            fig_path = IMG_DIR / f"training_loss_{variant}.pdf"
             save_loss_plot({variant: losses}, fig_path)
 
     # ---- summary CSV ----
-    summary_csv = FIG_DIR / "exp1_summary.csv"
+    summary_csv = IMG_DIR / "exp1_summary.csv"
     pd.DataFrame(results).to_csv(summary_csv, index=False)
 
     print("\nArtifacts written to:")
-    for p in FIG_DIR.glob("*.pdf"):
-        print("  ", p.relative_to(FIG_DIR.parent.parent))
-    print("  ", summary_csv.relative_to(FIG_DIR.parent.parent))
+    for p in IMG_DIR.glob("*.pdf"):
+        print("  ", p.relative_to(IMG_DIR.parent.parent))
+    print("  ", summary_csv.relative_to(IMG_DIR.parent.parent))
 
 # ---------------------------------------------------------------------------
 #  Entrypoint
