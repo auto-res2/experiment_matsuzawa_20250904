@@ -1,55 +1,18 @@
-# config/config.yaml will be auto-generated on first run by src/main.py
-# The file below shows the same defaults in valid YAML format.  Feel
-# free to edit before running experiments.
-exp1_smoke:
-  description: 30-second CPU smoke test ↔ CI regression gate
-  dataset: FakeData
-  num_classes: 4
-  epochs: 1
-  batch_size: 4
-  optimizer:
-    lr: 1e-3
-  autospu:
-    swap_prob: 1.0
-    lambda_consistency: 0.3
-    lambda_fourier: 0.5
-    fourier_cfg:
-      phase_max: 0.628
-      amp_min: 0.8
-      amp_max: 1.2
-
-exp2_waterbirds:
-  description: Waterbirds benchmark (graceful fallback)
-  dataset: Waterbirds
-  num_classes: 2
+dataset:
+  waterbirds:
+    version: 2.0
+    root_dir: data
+model:
+  name: resnetv2_50x1_bit.goog_in21k_ft_in1k
+  pretrained: true
+training:
   epochs: 30
   batch_size: 128
-  optimizer:
-    lr: 3e-4
-    weight_decay: 0.05
+  lr: 3e-4
+  weight_decay: 0.05
+  seeds:
+    waterbirds: [0, 1, 2, 3, 4]
+loss:
   autospu:
-    swap_prob: 1.0
     lambda_consistency: 1.0
     lambda_fourier: 0.3
-    fourier_cfg:
-      phase_max: 0.2
-      amp_min: 0.8
-      amp_max: 1.2
-
-exp3_shift_suite:
-  description: Cross-shift robustness suite (runs only if data present)
-  dataset: CIFAR10C_MetaShift_PACS
-  num_classes: 10
-  epochs: 10
-  batch_size: 64
-  optimizer:
-    lr: 5e-5
-    weight_decay: 0.05
-  autospu:
-    swap_prob: 1.0
-    lambda_consistency: 1.0
-    lambda_fourier: 0.5
-    fourier_cfg:
-      phase_max: 0.2
-      amp_min: 0.5
-      amp_max: 1.5
