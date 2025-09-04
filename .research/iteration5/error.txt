@@ -1,0 +1,66 @@
+ERROR: Exception:
+Traceback (most recent call last):
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_vendor/packaging/markers.py", line 280, in __init__
+    self._markers = _normalize_extra_values(_parse_marker(marker))
+                                            ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_vendor/packaging/_parser.py", line 253, in parse_marker
+    return _parse_full_marker(Tokenizer(source, rules=DEFAULT_RULES))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_vendor/packaging/_parser.py", line 257, in _parse_full_marker
+    retval = _parse_marker(tokenizer)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_vendor/packaging/_parser.py", line 266, in _parse_marker
+    expression = [_parse_marker_atom(tokenizer)]
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_vendor/packaging/_parser.py", line 291, in _parse_marker_atom
+    marker = _parse_marker_item(tokenizer)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_vendor/packaging/_parser.py", line 301, in _parse_marker_item
+    marker_var_left = _parse_marker_var(tokenizer)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_vendor/packaging/_parser.py", line 319, in _parse_marker_var
+    tokenizer.raise_syntax_error(
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_vendor/packaging/_tokenizer.py", line 168, in raise_syntax_error
+    raise ParserSyntaxError(
+pip._vendor.packaging._tokenizer.ParserSyntaxError: Expected a marker variable or quoted string
+    rest kept unchanged]
+    ^
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_internal/cli/base_command.py", line 107, in _run_wrapper
+    status = _inner_run()
+             ^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_internal/cli/base_command.py", line 98, in _inner_run
+    return self.run(options, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_internal/cli/req_command.py", line 71, in wrapper
+    return func(self, options, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_internal/commands/install.py", line 357, in run
+    reqs = self.get_requirements(args, options, finder, session)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_internal/cli/req_command.py", line 275, in get_requirements
+    req_to_add = install_req_from_parsed_requirement(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_internal/req/constructors.py", line 482, in install_req_from_parsed_requirement
+    req = install_req_from_line(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_internal/req/constructors.py", line 407, in install_req_from_line
+    parts = parse_req_from_line(name, line_source)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_internal/req/constructors.py", line 320, in parse_req_from_line
+    markers = Marker(markers_as_string)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/pip/_vendor/packaging/markers.py", line 298, in __init__
+    raise InvalidMarker(str(e)) from e
+pip._vendor.packaging.markers.InvalidMarker: Expected a marker variable or quoted string
+    rest kept unchanged]
+    ^
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 8, in <module>
+    import torch, yaml, pandas as pd
+ModuleNotFoundError: No module named 'torch'
