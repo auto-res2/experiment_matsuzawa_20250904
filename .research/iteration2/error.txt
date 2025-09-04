@@ -1,0 +1,22 @@
+Generating train split:   0%|          | 0/4795 [00:00<?, ? examples/s]Generating train split:  44%|████▍     | 2100/4795 [00:00<00:00, 19400.20 examples/s]Generating train split:  94%|█████████▍| 4500/4795 [00:00<00:00, 21742.61 examples/s]Generating train split: 100%|██████████| 4795/4795 [00:00<00:00, 21193.71 examples/s]
+Generating validation split:   0%|          | 0/1199 [00:00<?, ? examples/s]Generating validation split: 100%|██████████| 1199/1199 [00:00<00:00, 21008.23 examples/s]
+Generating test split:   0%|          | 0/5794 [00:00<?, ? examples/s]Generating test split:  40%|███▉      | 2300/5794 [00:00<00:00, 22617.91 examples/s]Generating test split:  86%|████████▋ | 5000/5794 [00:00<00:00, 24635.18 examples/s]Generating test split: 100%|██████████| 5794/5794 [00:00<00:00, 24557.94 examples/s]
+/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py:45: UserWarning: AutoSpuSwap pipeline not yet implemented – falling back to identity counter-factuals. Set autospu.enabled: false in the YAML config to silence this warning.
+  warnings.warn(
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 107, in <module>
+    main()
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/main.py", line 99, in main
+    trainer = Trainer(model, loaders, cfg, autospu=autospu)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/experiment_matsuzawa_20250904/experiment_matsuzawa_20250904/src/train.py", line 85, in __init__
+    self.opt = AdamW(
+               ^^^^^^
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/optim/adamw.py", line 37, in __init__
+    super().__init__(
+  File "/home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages/torch/optim/adam.py", line 58, in __init__
+    if not 0.0 <= lr:
+           ^^^^^^^^^
+TypeError: '<=' not supported between instances of 'float' and 'str'
