@@ -191,13 +191,34 @@ MODELS = {
 #                          TRAINING ROUTINES                              #
 ###########################################################################
 
+def _to_float(value, default: float) -> float:
+    """Utility to safely cast YAML-read scalars to float.
+
+    PyYAML occasionally preserves scientific-notation strings when a comment is
+    present on the same line (implementation quirk).  To make the training
+    robust we defensively cast any incoming value to float, falling back to a
+    provided default when the key is missing.
+    """
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        # In the unlikely event the value cannot be converted we raise an
+        # explicit error message instead of propagating a cryptic torch error.
+        raise ValueError(f"Cannot convert config value '{value}' to float.")
+
+
 def train_model(model: nn.Module, data, cfg: Dict[str, Any], device: torch.device) -> nn.Module:
     """Standard supervised training with early stopping on the validation loss."""
 
     model.to(device)
     data = data.to(device)
 
-    opt = torch.optim.AdamW(model.parameters(), lr=cfg["lr"], weight_decay=cfg["wd"])
+    # --- robust handling of config types ----------------------------------
+    lr = _to_float(cfg.get("lr"), 5e-4)
+    wd = _to_float(cfg.get("wd"), 5e-4)
+    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
 
     best_val = float("inf")
     best_state = None
