@@ -6,43 +6,73 @@ from __future__ import annotations
 # ---------------------------------------------------------------------------
 # 0)  DEPENDENCY HOT-FIX ------------------------------------------------------
 # ---------------------------------------------------------------------------
-# DGL (>=2.1) internally relies on the `IterDataPipe` class from the optional
-# `torchdata` package.  Unfortunately, at the time of writing, some Python/torch
-# version combinations ship a trimmed-down wheel of torchdata that does **not**
-# expose the expected sub-module `torchdata.datapipes.iter`.  This results in a
-# `ModuleNotFoundError` during the very first `import dgl`, long before any of
-# our project code runs.
-#
-# To keep the overall environment lightweight and to avoid version pinning
-# war-stories, we provide a tiny run-time stub that fully satisfies DGL’s needs
-# (it only ever touches `IterDataPipe` for type annotations).  If a fully-
-# featured torchdata installation *is* present, the following block becomes a
-# harmless no-op.
+# DGL (>=2.1) internally relies on several optional sub-modules from the
+# `torchdata` package.  Unfortunately, many pre-built wheels of torchdata that
+# accompany newer Python/PyTorch versions ship without *any* of those
+# sub-packages, leading to an `ImportError` already at `import dgl` time.  To
+# keep the project self-contained (and to avoid heavyweight or version-locked
+# dependencies) we create a *minimal* run-time stub that satisfies **all**
+# import statements that DGL performs.  No actual functionality is required –
+# the referenced symbols are used merely for static typing or in code paths
+# that are executed only for distributed training, which is well outside the
+# scope of this repository.
 
 import sys
 import types
 
+# Utility --------------------------------------------------------------------
+
+def _install_stub(module_name: str) -> types.ModuleType:
+    """Ensure that *module_name* is import-able by registering a stub module.
+
+    The function walks the fully-qualified module path (``a.b.c``) and makes
+    sure that every parent package exists inside ``sys.modules``.
+    """
+    if module_name in sys.modules:
+        return sys.modules[module_name]  # pragma: no cover – already present
+
+    parts = module_name.split(".")
+    for idx in range(1, len(parts) + 1):
+        sub_path = ".".join(parts[:idx])
+        if sub_path not in sys.modules:
+            sys.modules[sub_path] = types.ModuleType(sub_path)
+    return sys.modules[module_name]
+
+
+# 1)  Stub for ``torchdata.datapipes.iter`` ----------------------------------
 try:
-    # The normal case – nothing to patch.
     from torchdata.datapipes.iter import IterDataPipe  # noqa: F401
 except ModuleNotFoundError:  # pragma: no cover – executed only in broken envs
-    torchdata_mod = sys.modules.get("torchdata", types.ModuleType("torchdata"))
-    # `torchdata.datapipes` parent package ------------------------------------------------
-    datapipes_mod = types.ModuleType("torchdata.datapipes")
-    # `torchdata.datapipes.iter` sub-package ---------------------------------------------
-    iter_mod = types.ModuleType("torchdata.datapipes.iter")
+    iter_mod = _install_stub("torchdata.datapipes.iter")
 
     class _IterDataPipe:  # minimal stand-in (no functionality required)
         pass
 
     iter_mod.IterDataPipe = _IterDataPipe
-    datapipes_mod.iter = iter_mod
 
-    # Register stub modules so that future imports succeed ------------------------------
-    torchdata_mod.datapipes = datapipes_mod
-    sys.modules.setdefault("torchdata", torchdata_mod)
-    sys.modules["torchdata.datapipes"] = datapipes_mod
-    sys.modules["torchdata.datapipes.iter"] = iter_mod
+# 2)  Stub for ``torchdata.dataloader2.graph`` --------------------------------
+# DGL ≥ 2.1 also tries to ``import torchdata.dataloader2.graph as dp_utils``.
+# We expose a dummy sub-module whose *attributes* silently evaluate to no-op
+# callables so that *any* access pattern remains safe.
+
+def _make_no_op():
+    def _fn(*_args, **_kwargs):  # noqa: D401, ANN001
+        """No-op stub injected because full *torchdata* is absent."""
+        return None
+
+    return _fn
+
+try:
+    import torchdata.dataloader2.graph as _unused  # noqa: F401  # pylint: disable=import-error
+except ModuleNotFoundError:  # pragma: no cover – executed only in broken envs
+    graph_mod = _install_stub("torchdata.dataloader2.graph")
+
+    class _GraphStub(types.ModuleType):
+        def __getattr__(self, item):  # noqa: D401, ANN001
+            return _make_no_op()
+
+    # Replace plain ModuleType with fancy stub providing dynamic attributes
+    sys.modules["torchdata.dataloader2.graph"] = _GraphStub("torchdata.dataloader2.graph")
 
 # ---------------------------------------------------------------------------
 # Standard library & third-party imports (after the patch) -------------------
