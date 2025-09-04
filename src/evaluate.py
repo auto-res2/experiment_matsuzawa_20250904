@@ -19,7 +19,7 @@ _DEF_STYLE = dict(lw=2)
 # -----------------------------------------------------------------------------
 # All figures must be saved to this directory as per the build rules
 # -----------------------------------------------------------------------------
-_IMAGES_DIR = ".research/iteration3/images"
+_IMAGES_DIR = ".research/iteration4/images"  # ← updated to *iteration4*
 
 
 def _ensure_images_dir() -> None:
@@ -37,7 +37,7 @@ def plot_curves(
 ) -> None:  # noqa: E501
     """Plot *train* vs *val* loss curves and save them to *out*.
 
-    The figure is stored directly in ``.research/iteration3/images`` as
+    The figure is stored directly in ``.research/iteration4/images`` as
     required by the build rules.  The directory is created on-the-fly if
     it does not already exist.
     """

@@ -95,7 +95,19 @@ class Waterbirds(Dataset):
 
     def __getitem__(self, idx: int):  # noqa: D401
         item = self.items[idx]
-        img = Image.open(item["image"]).convert("RGB")
+
+        # `item["image"]` can be either a PIL.Image.Image (most common with
+        # HuggingFace datasets) **or** a file-path / bytes buffer depending on
+        # how the dataset was prepared.  The logic below handles both cases
+        # gracefully, preventing the AttributeError triggered when a PIL image
+        # was passed to ``Image.open``.
+        img_field = item["image"]
+        if isinstance(img_field, Image.Image):
+            img = img_field.convert("RGB")
+        else:
+            # Assume *path-like* or file-object input
+            img = Image.open(img_field).convert("RGB")
+
         label = torch.tensor(item["label"], dtype=torch.long)
         img_t = self.transform(img)
         return img_t, label, idx
