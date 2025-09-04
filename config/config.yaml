@@ -1,0 +1,77 @@
+seed: [2023, 2024, 2025]
+workspace: .
+exp_name: cpqr_memory_vs_accuracy
+cuda: true
+num_workers: 4
+print_freq: 50
+
+hardware:
+  gpu_name: Tesla T4
+  gpu_mem: 16GB
+  note: "Reported by nvidia-smi at runtime"
+
+optim:
+  lr: 0.1
+  momentum: 0.9
+  weight_decay: 5e-4
+  scheduler: cosine
+  batch_size: 128
+  epochs_per_task:
+    vision: 5
+    mnist: 1
+
+buffer_budgets_mb: [0.25, 0.5, 1, 2]
+
+cpqr:
+  dim: 512
+  M: 8
+  codebook_size: 256
+  lloyd_interval: 250
+  lambda_align: 0.5
+  dtype: float16
+
+hyper_sweep:
+  M: [4, 8, 16]
+  lambda_align: [0.0, 0.1, 0.5, 1.0]
+
+datasets:
+  split_cifar100:
+    name: SplitCIFAR100
+    tasks: 20
+    classes_per_task: 5
+    train_transforms: vision
+    test_transforms: vision
+    url: https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz
+  split_mini_imagenet:
+    name: SplitMiniImageNet
+    tasks: 20
+    classes_per_task: 5
+    train_transforms: vision
+    test_transforms: vision
+    url: https://huggingface.co/datasets/timm/mini-imagenet
+  tiny_imagenet:
+    name: SplitTinyImageNet
+    tasks: 10
+    classes_per_task: 20
+    train_transforms: vision
+    test_transforms: vision
+    url: http://cs231n.stanford.edu/tiny-imagenet-200.zip
+  permuted_mnist:
+    name: PermutedMNIST
+    tasks: 10
+    classes_per_task: 10
+    train_transforms: mnist
+    test_transforms: mnist
+    url: builtin
+
+models:
+  resnet18:
+    name: resnet18
+    num_classes: 100
+    pretrained: true
+  mlp_mnist:
+    name: mlp_2layer
+    hidden: 400
+    num_classes: 10
+
+baselines: [ER, DER++, BFP, OCC, ORTHOG_SUBSPACE, PRD, ER_JPEG]
