@@ -6,5 +6,82 @@
     "continual learning coreset compression",
     "knowledge distillation continual learning",
     "continual learning sparse rehearsal"
+  ],
+  "research_study_list": [
+    {
+      "title": "Continual Learning in Low-rank Orthogonal Subspaces"
+    },
+    {
+      "title": "Contextual Transformation Networks for Online Continual Learning"
+    },
+    {
+      "title": "Improving Task-free Continual Learning by Distributionally Robust Memory Evolution"
+    },
+    {
+      "title": "Improving Task-free Continual Learning by Distributionally Robust Memory Evolution"
+    },
+    {
+      "title": "SparCL: Sparse Continual Learning on the Edge"
+    },
+    {
+      "title": "Contextual Transformation Networks for Online Continual Learning"
+    },
+    {
+      "title": "Navigating Memory Construction by Global Pseudo-Task Simulation for Continual Learning"
+    },
+    {
+      "title": "MECTA: Memory-Economic Continual Test-Time Model Adaptation"
+    },
+    {
+      "title": "Look-ahead Meta Learning for Continual Learning"
+    },
+    {
+      "title": "Look-ahead Meta Learning for Continual Learning"
+    },
+    {
+      "title": "Coresets via Bilevel Optimization for Continual Learning and Streaming"
+    },
+    {
+      "title": "Bilevel Coreset Selection in Continual Learning: A New Formulation and Algorithm"
+    },
+    {
+      "title": "Probabilistic Bilevel Coreset Selection"
+    },
+    {
+      "title": "Probabilistic Bilevel Coreset Selection"
+    },
+    {
+      "title": "Online Learned Continual Compression with Adaptive Quantization Modules"
+    },
+    {
+      "title": "Rethinking Momentum Knowledge Distillation in Online Continual Learning"
+    },
+    {
+      "title": "Heterogeneous Continual Learning"
+    },
+    {
+      "title": "Prototype-Sample Relation Distillation: Towards Replay-Free Continual Learning"
+    },
+    {
+      "title": "Preserving Linear Separability in Continual Learning by Backward Feature Projection"
+    },
+    {
+      "title": "Provable Contrastive Continual Learning"
+    },
+    {
+      "title": "SparCL: Sparse Continual Learning on the Edge"
+    },
+    {
+      "title": "Graph-Based Continual Learning"
+    },
+    {
+      "title": "NISPA: Neuro-Inspired Stability-Plasticity Adaptation for Continual Learning in Sparse Networks"
+    },
+    {
+      "title": "NISPA: Neuro-Inspired Stability-Plasticity Adaptation for Continual Learning in Sparse Networks"
+    },
+    {
+      "title": "On the Effectiveness of Lipschitz-Driven Rehearsal in Continual Learning"
+    }
   ]
 }
