@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F  # only used indirectly for type clarity
 
-# All generated figures go into the mandated directory
-_FIG_DIR = Path(".research/iteration14/images")
+# All generated figures go into the mandated directory (see repository policy)
+_FIG_DIR = Path(".research/iteration15/images")
 _FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # -----------------------------------------------------------------------------
@@ -69,7 +69,8 @@ def _annotate(ax):
     for line in ax.get_lines():
         xdata, ydata = line.get_xdata(), line.get_ydata()
         for x, y in zip(xdata, ydata):
-            ax.text(x, y, f"{y:.2f}", fontsize=6, ha="center", va="bottom")
+            # Ensure values are Python scalars for safe formatting
+            ax.text(float(x), float(y), f"{float(y):.2f}", fontsize=6, ha="center", va="bottom")
 
 
 def _save_line(y: List[float], title: str, ylabel: str, fname: str) -> Path:
