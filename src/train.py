@@ -1,11 +1,13 @@
-[UPDATED CONTENT BELOW]
-```python
 """src/train.py
 Model-training related classes and functions.
 The code is **directly refactored** from the single-file implementation so
 logic, default values and public APIs stay identical.
 """
 from __future__ import annotations
+
+# NOTE: All placeholder markers that were accidentally written to disk have been
+#       removed.  This file now starts with valid Python – the earlier
+#       `[UPDATED CONTENT BELOW]` token caused a SyntaxError at import time.
 
 import random
 import time
@@ -38,7 +40,8 @@ ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = ROOT / "config" / "config.yaml"
 if not CONFIG_PATH.exists():
     raise FileNotFoundError(
-        f"Configuration file {CONFIG_PATH} missing – please add one before running."    )
+        f"Configuration file {CONFIG_PATH} missing – please add one before running."
+    )
 with open(CONFIG_PATH, "r", encoding="utf-8") as f:
     CFG: Dict[str, Any] = yaml.safe_load(f)
 
@@ -249,6 +252,7 @@ def build_model() -> nn.Module:
 #  5.  Waterbirds experiment (EXP-1)
 # ------------------------------------------------------------------
 
+
 def run_waterbirds() -> None:  # noqa: D401
     """Full 5-seed Waterbirds experiment with all baselines."""
 
@@ -417,4 +421,3 @@ if __name__ == "__main__":  # pragma: no cover
     tic = time.time()
     run_waterbirds()
     print(f"[bold green]Finished Waterbirds experiment in {time.time() - tic:.1f}s.")
-```

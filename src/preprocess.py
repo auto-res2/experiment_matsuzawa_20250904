@@ -1,12 +1,12 @@
-[UPDATED CONTENT BELOW]
-```python
 """src/preprocess.py
 Data-loading & preprocessing utilities (currently Waterbirds only).
 """
 from __future__ import annotations
 
+# All placeholder tokens removed.
+
 from pathlib import Path
-from typing import Callable, Dict, Tuple
+from typing import Any, Callable, Dict, Tuple
 
 from rich import print
 
@@ -30,31 +30,27 @@ def get_waterbirds_loaders(
     batch_size: int,
     train_tf: Callable,
     val_tf: Callable,
-) -> Tuple[Callable[[], Dict[str, any]], Dict[str, int]]:  # noqa: ANN401
+) -> Tuple[Callable[[], Dict[str, Any]], Dict[str, int]]:
     """Returns (loader_factory, meta) to avoid duplicate downloads."""
 
-    # Waterbirds only has version 1.0 in the current WILDS release
     wb = get_dataset("waterbirds", version="1.0", root_dir=str(DATA_DIR), download=True)
 
     def make_loader(split: str):
         loader_fn = get_train_loader if split == "train" else get_eval_loader
-        mode = "standard" if split == "train" else "standard"
+        mode = "standard"  # both train/val use standard loader here
+        tf = train_tf if split == "train" else val_tf
         return loader_fn(
             mode,
             wb,
             split=split,
             batch_size=batch_size,
             num_workers=4,
-            transform=train_tf if split == "train" else val_tf,
+            transform=tf,
         )
 
     def loader_factory():  # new DataLoader objects each call
         return {s: make_loader(s) for s in ("train", "val")}
 
-    # Robust retrieval of the number of groups (always 4 for Waterbirds)
-    n_groups = getattr(wb, "n_groups", 4)
-    if n_groups is None:
-        n_groups = 4
+    n_groups = getattr(wb, "n_groups", 4) or 4
 
     return loader_factory, {"n_groups": int(n_groups)}
-```

@@ -1,15 +1,13 @@
-[UPDATED CONTENT BELOW]
-```python
 from __future__ import annotations
 
 """src/evaluate.py
 Evaluation, metrics, plotting utilities and diagnostic routines.
-Refactored verbatim from the original single-file script.
-The former circular import with src.train has been resolved by
-removing the top-level dependency on that module.  Only the symbols that
-are genuinely required at runtime (ContextSwapper) are imported lazily
-inside the diagnostic routine.  DEVICE / DTYPE are now defined locally
-so that this file is fully self-contained.
+Refactored verbatim from the original single-file script.  All placeholder
+markers have been removed.  The former circular import with src.train has been
+resolved by importing ContextSwapper lazily inside the diagnostic routine.
+
+Images are now written to `.research/iteration18/images` as required by the
+specification.
 """
 
 import json
@@ -30,11 +28,11 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DTYPE = torch.bfloat16 if torch.cuda.is_available() else torch.float32
 
 # ------------------------------------------------------------------
-#  Paths – images are required to live under .research/iteration17/images
+#  Paths – images have to live under .research/iteration18/images
 # ------------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS_DIR = ROOT / "results"
-FIG_DIR = ROOT / ".research" / "iteration17" / "images"  # updated path per spec
+FIG_DIR = ROOT / ".research" / "iteration18" / "images"
 CKPT_DIR = ROOT / "models"
 for d in (RESULTS_DIR, FIG_DIR):
     d.mkdir(parents=True, exist_ok=True)
@@ -83,7 +81,7 @@ def eval_waterbirds(model, loader, n_groups: int):  # noqa: ANN001
             g = metadata[:, 0].to(DEVICE)
         else:
             place = metadata[:, 1].to(DEVICE)
-            g = (y * 2 + place)
+            g = y * 2 + place
         logits = model(x)
         pred = logits.argmax(1)
         y_cat.append(y)
@@ -153,7 +151,6 @@ def run_diagnostics() -> None:  # noqa: D401
     from wilds.common.data_loaders import get_eval_loader
     import torchvision.transforms as T
 
-    # Waterbirds only supports version 1.0 in wilds – updated accordingly
     wb = get_dataset("waterbirds", version="1.0", root_dir=str(ROOT / "data"), download=False)
     val_tf = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
     val_loader = get_eval_loader(
@@ -176,7 +173,6 @@ def run_diagnostics() -> None:  # noqa: D401
     delta_auto = torch.cat(deltas_auto).mean().item()
 
     diag = {"Δlogits_ERM": delta_erm, "Δlogits_AutoSpuSwap": delta_auto}
-    RESULTS_DIR.mkdir(exist_ok=True, parents=True)
     out_path = RESULTS_DIR / "invariance_diag.json"
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(diag, f, indent=2)
@@ -193,4 +189,3 @@ def paired_ttest(csv_path: Path, metric: str, method_a: str, method_b: str):  # 
     b = df[df.method == method_b][metric]
     t_stat, p_val = ttest_rel(a, b)
     print(f"Paired t-test {method_a} vs {method_b} on {metric}:  t={t_stat:.3f}  p={p_val:.4f}")
-```
