@@ -3,7 +3,6 @@ torchvision==0.17.2
 wilds==2.0.0
 timm==0.9.12
 transformers==4.38.1
-git+https://github.com/openai/CLIP.git@83a5
 scipy==1.13.0
 scikit-learn==1.5.0
 pandas==2.2.2

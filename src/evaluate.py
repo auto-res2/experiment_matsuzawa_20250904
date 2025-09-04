@@ -1,7 +1,7 @@
+from __future__ import annotations
 """
 evaluate.py – evaluation utilities, metrics, and diagnostics
 """
-from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Dict, Any
@@ -39,8 +39,22 @@ def _ensure_dir(p: Path) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
 
 
+# All images must be stored under this directory according to the task rules
+_IMAGES_ROOT = Path(".research/iteration21/images")
+_IMAGES_ROOT.mkdir(parents=True, exist_ok=True)
+
+
 def save_bar_plot(series, title: str, fname: Path | str, ylabel: str) -> None:  # type: ignore
+    """Save a simple bar plot.
+
+    Irrespective of the *fname* requested by the caller, the figure is saved to
+    `.research/iteration21/images/<basename(fname)>` to comply with the
+    evaluation framework requirements.
+    """
+    # Map requested filename to mandated directory while preserving basename
+    fname = _IMAGES_ROOT / Path(fname).name
     _ensure_dir(Path(fname))
+
     plt.figure(figsize=(4, 3))
     bars = plt.bar(range(len(series)), series.values * 100, tick_label=series.index)
     for b in bars:
