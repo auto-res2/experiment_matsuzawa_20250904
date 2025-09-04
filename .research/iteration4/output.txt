@@ -1,0 +1,254 @@
+=== pip install start Thu Sep  4 05:19:21 UTC 2025 ===
+Collecting torch<2.0.0,>=1.13.0 (from -r requirements.txt (line 1))
+  Using cached torch-1.13.1-cp311-cp311-manylinux1_x86_64.whl.metadata (24 kB)
+Collecting torch_geometric>=2.3.0 (from -r requirements.txt (line 2))
+  Using cached torch_geometric-2.6.1-py3-none-any.whl.metadata (63 kB)
+Collecting fvcore>=0.1.5 (from -r requirements.txt (line 5))
+  Using cached fvcore-0.1.5.post20221221.tar.gz (50 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting GraphRicciCurvature>=0.5.3 (from -r requirements.txt (line 6))
+  Using cached GraphRicciCurvature-0.5.3.2-py3-none-any.whl.metadata (9.0 kB)
+Collecting networkx>=2.8 (from -r requirements.txt (line 7))
+  Using cached networkx-3.5-py3-none-any.whl.metadata (6.3 kB)
+Collecting ogb>=1.3 (from -r requirements.txt (line 8))
+  Using cached ogb-1.3.6-py3-none-any.whl.metadata (6.2 kB)
+Collecting pandas>=1.5 (from -r requirements.txt (line 9))
+  Using cached pandas-2.3.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (91 kB)
+Collecting matplotlib>=3.5 (from -r requirements.txt (line 10))
+  Using cached matplotlib-3.10.6-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (11 kB)
+Collecting seaborn>=0.12 (from -r requirements.txt (line 11))
+  Using cached seaborn-0.13.2-py3-none-any.whl.metadata (5.4 kB)
+Collecting pyyaml>=6.0 (from -r requirements.txt (line 12))
+  Using cached PyYAML-6.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (2.1 kB)
+Collecting typing-extensions (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Using cached typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting nvidia-cuda-runtime-cu11==11.7.99 (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Using cached nvidia_cuda_runtime_cu11-11.7.99-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+Collecting nvidia-cudnn-cu11==8.5.0.96 (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Using cached nvidia_cudnn_cu11-8.5.0.96-2-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+Collecting nvidia-cublas-cu11==11.10.3.66 (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Using cached nvidia_cublas_cu11-11.10.3.66-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+Collecting nvidia-cuda-nvrtc-cu11==11.7.99 (from torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Using cached nvidia_cuda_nvrtc_cu11-11.7.99-2-py3-none-manylinux1_x86_64.whl.metadata (1.5 kB)
+Requirement already satisfied: setuptools in /home/runner/work/_tool/Python/3.11.13/x64/lib/python3.11/site-packages (from nvidia-cublas-cu11==11.10.3.66->torch<2.0.0,>=1.13.0->-r requirements.txt (line 1)) (65.5.0)
+Collecting wheel (from nvidia-cublas-cu11==11.10.3.66->torch<2.0.0,>=1.13.0->-r requirements.txt (line 1))
+  Using cached wheel-0.45.1-py3-none-any.whl.metadata (2.3 kB)
+Collecting aiohttp (from torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading aiohttp-3.12.15-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (7.7 kB)
+Collecting fsspec (from torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading fsspec-2025.9.0-py3-none-any.whl.metadata (10 kB)
+Collecting jinja2 (from torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting numpy (from torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading numpy-2.3.2-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (62 kB)
+Collecting psutil>=5.8.0 (from torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading psutil-7.0.0-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (22 kB)
+Collecting pyparsing (from torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading pyparsing-3.2.3-py3-none-any.whl.metadata (5.0 kB)
+Collecting requests (from torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Using cached requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+Collecting tqdm (from torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading tqdm-4.67.1-py3-none-any.whl.metadata (57 kB)
+Collecting yacs>=0.1.6 (from fvcore>=0.1.5->-r requirements.txt (line 5))
+  Downloading yacs-0.1.8-py3-none-any.whl.metadata (639 bytes)
+Collecting termcolor>=1.1 (from fvcore>=0.1.5->-r requirements.txt (line 5))
+  Downloading termcolor-3.1.0-py3-none-any.whl.metadata (6.4 kB)
+Collecting Pillow (from fvcore>=0.1.5->-r requirements.txt (line 5))
+  Downloading pillow-11.3.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (9.0 kB)
+Collecting tabulate (from fvcore>=0.1.5->-r requirements.txt (line 5))
+  Downloading tabulate-0.9.0-py3-none-any.whl.metadata (34 kB)
+Collecting iopath>=0.1.7 (from fvcore>=0.1.5->-r requirements.txt (line 5))
+  Downloading iopath-0.1.10.tar.gz (42 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting cython (from GraphRicciCurvature>=0.5.3->-r requirements.txt (line 6))
+  Downloading cython-3.1.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (4.7 kB)
+Collecting scipy<=1.13.1 (from GraphRicciCurvature>=0.5.3->-r requirements.txt (line 6))
+  Downloading scipy-1.13.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (60 kB)
+Collecting pot>=0.8.0 (from GraphRicciCurvature>=0.5.3->-r requirements.txt (line 6))
+  Downloading POT-0.9.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (34 kB)
+Collecting packaging (from GraphRicciCurvature>=0.5.3->-r requirements.txt (line 6))
+  Downloading packaging-25.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting networkit>=6.1 (from GraphRicciCurvature>=0.5.3->-r requirements.txt (line 6))
+  Downloading networkit-11.1.post1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (14 kB)
+Collecting python-louvain (from GraphRicciCurvature>=0.5.3->-r requirements.txt (line 6))
+  Downloading python-louvain-0.16.tar.gz (204 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting numpy (from torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading numpy-2.2.6-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (62 kB)
+Collecting scikit-learn>=0.20.0 (from ogb>=1.3->-r requirements.txt (line 8))
+  Downloading scikit_learn-1.7.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (11 kB)
+Collecting six>=1.12.0 (from ogb>=1.3->-r requirements.txt (line 8))
+  Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting urllib3>=1.24.0 (from ogb>=1.3->-r requirements.txt (line 8))
+  Using cached urllib3-2.5.0-py3-none-any.whl.metadata (6.5 kB)
+Collecting outdated>=0.2.0 (from ogb>=1.3->-r requirements.txt (line 8))
+  Downloading outdated-0.2.2-py2.py3-none-any.whl.metadata (4.7 kB)
+Collecting python-dateutil>=2.8.2 (from pandas>=1.5->-r requirements.txt (line 9))
+  Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Collecting pytz>=2020.1 (from pandas>=1.5->-r requirements.txt (line 9))
+  Downloading pytz-2025.2-py2.py3-none-any.whl.metadata (22 kB)
+Collecting tzdata>=2022.7 (from pandas>=1.5->-r requirements.txt (line 9))
+  Downloading tzdata-2025.2-py2.py3-none-any.whl.metadata (1.4 kB)
+Collecting contourpy>=1.0.1 (from matplotlib>=3.5->-r requirements.txt (line 10))
+  Downloading contourpy-1.3.3-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (5.5 kB)
+Collecting cycler>=0.10 (from matplotlib>=3.5->-r requirements.txt (line 10))
+  Downloading cycler-0.12.1-py3-none-any.whl.metadata (3.8 kB)
+Collecting fonttools>=4.22.0 (from matplotlib>=3.5->-r requirements.txt (line 10))
+  Downloading fonttools-4.59.2-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (109 kB)
+Collecting kiwisolver>=1.3.1 (from matplotlib>=3.5->-r requirements.txt (line 10))
+  Downloading kiwisolver-1.4.9-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (6.3 kB)
+Collecting portalocker (from iopath>=0.1.7->fvcore>=0.1.5->-r requirements.txt (line 5))
+  Downloading portalocker-3.2.0-py3-none-any.whl.metadata (8.7 kB)
+Collecting littleutils (from outdated>=0.2.0->ogb>=1.3->-r requirements.txt (line 8))
+  Downloading littleutils-0.2.4-py3-none-any.whl.metadata (679 bytes)
+Collecting joblib>=1.2.0 (from scikit-learn>=0.20.0->ogb>=1.3->-r requirements.txt (line 8))
+  Downloading joblib-1.5.2-py3-none-any.whl.metadata (5.6 kB)
+Collecting threadpoolctl>=3.1.0 (from scikit-learn>=0.20.0->ogb>=1.3->-r requirements.txt (line 8))
+  Downloading threadpoolctl-3.6.0-py3-none-any.whl.metadata (13 kB)
+Collecting aiohappyeyeballs>=2.5.0 (from aiohttp->torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading aiohappyeyeballs-2.6.1-py3-none-any.whl.metadata (5.9 kB)
+Collecting aiosignal>=1.4.0 (from aiohttp->torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading aiosignal-1.4.0-py3-none-any.whl.metadata (3.7 kB)
+Collecting attrs>=17.3.0 (from aiohttp->torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading attrs-25.3.0-py3-none-any.whl.metadata (10 kB)
+Collecting frozenlist>=1.1.1 (from aiohttp->torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading frozenlist-1.7.0-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (18 kB)
+Collecting multidict<7.0,>=4.5 (from aiohttp->torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading multidict-6.6.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (5.3 kB)
+Collecting propcache>=0.2.0 (from aiohttp->torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading propcache-0.3.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (12 kB)
+Collecting yarl<2.0,>=1.17.0 (from aiohttp->torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading yarl-1.20.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (73 kB)
+Collecting idna>=2.0 (from yarl<2.0,>=1.17.0->aiohttp->torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading idna-3.10-py3-none-any.whl.metadata (10 kB)
+Collecting MarkupSafe>=2.0 (from jinja2->torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading MarkupSafe-3.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.0 kB)
+Collecting charset_normalizer<4,>=2 (from requests->torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading charset_normalizer-3.4.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (36 kB)
+Collecting certifi>=2017.4.17 (from requests->torch_geometric>=2.3.0->-r requirements.txt (line 2))
+  Downloading certifi-2025.8.3-py3-none-any.whl.metadata (2.4 kB)
+Downloading torch-1.13.1-cp311-cp311-manylinux1_x86_64.whl (887.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 887.4/887.4 MB 34.1 MB/s  0:00:12
+Downloading nvidia_cublas_cu11-11.10.3.66-py3-none-manylinux1_x86_64.whl (317.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 317.1/317.1 MB 79.9 MB/s  0:00:03
+Downloading nvidia_cuda_nvrtc_cu11-11.7.99-2-py3-none-manylinux1_x86_64.whl (21.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 21.0/21.0 MB 58.1 MB/s  0:00:00
+Downloading nvidia_cuda_runtime_cu11-11.7.99-py3-none-manylinux1_x86_64.whl (849 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 849.3/849.3 kB 24.0 MB/s  0:00:00
+Downloading nvidia_cudnn_cu11-8.5.0.96-2-py3-none-manylinux1_x86_64.whl (557.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 557.1/557.1 MB 48.8 MB/s  0:00:07
+Downloading torch_geometric-2.6.1-py3-none-any.whl (1.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 132.7 MB/s  0:00:00
+Downloading GraphRicciCurvature-0.5.3.2-py3-none-any.whl (23 kB)
+Downloading scipy-1.13.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (38.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 38.6/38.6 MB 147.9 MB/s  0:00:00
+Downloading numpy-2.2.6-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.8/16.8 MB 139.9 MB/s  0:00:00
+Downloading networkx-3.5-py3-none-any.whl (2.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 143.1 MB/s  0:00:00
+Downloading ogb-1.3.6-py3-none-any.whl (78 kB)
+Downloading pandas-2.3.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (12.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.4/12.4 MB 180.1 MB/s  0:00:00
+Downloading matplotlib-3.10.6-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (8.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.7/8.7 MB 140.3 MB/s  0:00:00
+Downloading seaborn-0.13.2-py3-none-any.whl (294 kB)
+Downloading PyYAML-6.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (762 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 763.0/763.0 kB 120.2 MB/s  0:00:00
+Downloading contourpy-1.3.3-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (355 kB)
+Downloading cycler-0.12.1-py3-none-any.whl (8.3 kB)
+Downloading fonttools-4.59.2-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (5.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.0/5.0 MB 153.4 MB/s  0:00:00
+Downloading kiwisolver-1.4.9-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (1.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.4/1.4 MB 134.3 MB/s  0:00:00
+Downloading networkit-11.1.post1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (11.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 11.0/11.0 MB 115.1 MB/s  0:00:00
+Downloading outdated-0.2.2-py2.py3-none-any.whl (7.5 kB)
+Downloading packaging-25.0-py3-none-any.whl (66 kB)
+Downloading pillow-11.3.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (6.6 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.6/6.6 MB 139.8 MB/s  0:00:00
+Downloading POT-0.9.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (897 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 897.5/897.5 kB 122.5 MB/s  0:00:00
+Downloading psutil-7.0.0-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (277 kB)
+Downloading pyparsing-3.2.3-py3-none-any.whl (111 kB)
+Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Downloading pytz-2025.2-py2.py3-none-any.whl (509 kB)
+Downloading scikit_learn-1.7.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (9.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.7/9.7 MB 153.5 MB/s  0:00:00
+Downloading joblib-1.5.2-py3-none-any.whl (308 kB)
+Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading termcolor-3.1.0-py3-none-any.whl (7.7 kB)
+Downloading threadpoolctl-3.6.0-py3-none-any.whl (18 kB)
+Downloading tqdm-4.67.1-py3-none-any.whl (78 kB)
+Downloading tzdata-2025.2-py2.py3-none-any.whl (347 kB)
+Downloading urllib3-2.5.0-py3-none-any.whl (129 kB)
+Downloading yacs-0.1.8-py3-none-any.whl (14 kB)
+Downloading aiohttp-3.12.15-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (1.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.7/1.7 MB 130.1 MB/s  0:00:00
+Downloading multidict-6.6.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (246 kB)
+Downloading yarl-1.20.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (348 kB)
+Downloading aiohappyeyeballs-2.6.1-py3-none-any.whl (15 kB)
+Downloading aiosignal-1.4.0-py3-none-any.whl (7.5 kB)
+Downloading attrs-25.3.0-py3-none-any.whl (63 kB)
+Downloading frozenlist-1.7.0-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (235 kB)
+Downloading idna-3.10-py3-none-any.whl (70 kB)
+Downloading propcache-0.3.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (213 kB)
+Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+Downloading cython-3.1.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (3.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 126.6 MB/s  0:00:00
+Downloading fsspec-2025.9.0-py3-none-any.whl (199 kB)
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Downloading MarkupSafe-3.0.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (23 kB)
+Downloading littleutils-0.2.4-py3-none-any.whl (8.1 kB)
+Downloading portalocker-3.2.0-py3-none-any.whl (22 kB)
+Downloading requests-2.32.5-py3-none-any.whl (64 kB)
+Downloading charset_normalizer-3.4.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (150 kB)
+Downloading certifi-2025.8.3-py3-none-any.whl (161 kB)
+Downloading tabulate-0.9.0-py3-none-any.whl (35 kB)
+Downloading wheel-0.45.1-py3-none-any.whl (72 kB)
+Building wheels for collected packages: fvcore, iopath, python-louvain
+  Building wheel for fvcore (pyproject.toml): started
+  Building wheel for fvcore (pyproject.toml): finished with status 'done'
+  Created wheel for fvcore: filename=fvcore-0.1.5.post20221221-py3-none-any.whl size=61445 sha256=6db18e69ff73ca394a4cbd2221fa01e06973ceca5f1e43f39c81a06948293015
+  Stored in directory: /home/runner/.cache/pip/wheels/65/71/95/3b8fde5c65c6e4a806e0867c1651dcc71a1cb2f3430e8f355f
+  Building wheel for iopath (pyproject.toml): started
+  Building wheel for iopath (pyproject.toml): finished with status 'done'
+  Created wheel for iopath: filename=iopath-0.1.10-py3-none-any.whl size=31600 sha256=4fcaacaaa05864c096f4c8ea64c003c66f2a440f13fbb58e89a453991cdb58df
+  Stored in directory: /home/runner/.cache/pip/wheels/ba/5e/16/6117f8fe7e9c0c161a795e10d94645ebcf301ccbd01f66d8ec
+  Building wheel for python-louvain (pyproject.toml): started
+  Building wheel for python-louvain (pyproject.toml): finished with status 'done'
+  Created wheel for python-louvain: filename=python_louvain-0.16-py3-none-any.whl size=9460 sha256=2b1ce709a68290ff1ff16574b419ebdd33ec94ac2924332906510764fbf370e4
+  Stored in directory: /home/runner/.cache/pip/wheels/11/c1/e7/f62a211c636275e2da798bf0c307a3ae79aeddaf2524a03ce4
+Successfully built fvcore iopath python-louvain
+Installing collected packages: pytz, wheel, urllib3, tzdata, typing-extensions, tqdm, threadpoolctl, termcolor, tabulate, six, pyyaml, pyparsing, psutil, propcache, portalocker, Pillow, packaging, nvidia-cuda-nvrtc-cu11, numpy, networkx, multidict, MarkupSafe, littleutils, kiwisolver, joblib, idna, fsspec, frozenlist, fonttools, cython, cycler, charset_normalizer, certifi, attrs, aiohappyeyeballs, yarl, yacs, scipy, requests, python-louvain, python-dateutil, nvidia-cuda-runtime-cu11, nvidia-cublas-cu11, jinja2, iopath, contourpy, aiosignal, scikit-learn, pot, pandas, outdated, nvidia-cudnn-cu11, networkit, matplotlib, fvcore, aiohttp, torch_geometric, torch, seaborn, GraphRicciCurvature, ogb
+
+Successfully installed GraphRicciCurvature-0.5.3.2 MarkupSafe-3.0.2 Pillow-11.3.0 aiohappyeyeballs-2.6.1 aiohttp-3.12.15 aiosignal-1.4.0 attrs-25.3.0 certifi-2025.8.3 charset_normalizer-3.4.3 contourpy-1.3.3 cycler-0.12.1 cython-3.1.3 fonttools-4.59.2 frozenlist-1.7.0 fsspec-2025.9.0 fvcore-0.1.5.post20221221 idna-3.10 iopath-0.1.10 jinja2-3.1.6 joblib-1.5.2 kiwisolver-1.4.9 littleutils-0.2.4 matplotlib-3.10.6 multidict-6.6.4 networkit-11.1.post1 networkx-3.5 numpy-2.2.6 nvidia-cublas-cu11-11.10.3.66 nvidia-cuda-nvrtc-cu11-11.7.99 nvidia-cuda-runtime-cu11-11.7.99 nvidia-cudnn-cu11-8.5.0.96 ogb-1.3.6 outdated-0.2.2 packaging-25.0 pandas-2.3.2 portalocker-3.2.0 pot-0.9.5 propcache-0.3.2 psutil-7.0.0 pyparsing-3.2.3 python-dateutil-2.9.0.post0 python-louvain-0.16 pytz-2025.2 pyyaml-6.0.2 requests-2.32.5 scikit-learn-1.7.1 scipy-1.13.1 seaborn-0.13.2 six-1.17.0 tabulate-0.9.0 termcolor-3.1.0 threadpoolctl-3.6.0 torch-1.13.1 torch_geometric-2.6.1 tqdm-4.67.1 typing-extensions-4.15.0 tzdata-2025.2 urllib3-2.5.0 wheel-0.45.1 yacs-0.1.8 yarl-1.20.1
+=== pip install end Thu Sep  4 05:20:42 UTC 2025 ===
+=== experiment start Thu Sep  4 05:20:42 UTC 2025 ===
+{'act_params': {'beta': 0.01, 'tau': 1.0},
+ 'cache_dir': 'cache',
+ 'datasets': ['Cora', 'Citeseer', 'Chameleon', 'Squirrel', 'ogbn-arxiv'],
+ 'depths': [16, 32, 64, 128],
+ 'description': 'Depth scaling stress-test on medium graphs.',
+ 'log_every': 10,
+ 'lr': 0.001,
+ 'max_epochs': 500,
+ 'output_dir': 'figures',
+ 'patience': 50,
+ 'seeds': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+ 'variants': ['vanilla', 'dropedge', 'dgn', 'cap'],
+ 'weight_decay': 0.0005}
