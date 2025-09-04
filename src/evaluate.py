@@ -1,9 +1,7 @@
-"""
-evaluate.py – evaluation utilities, metrics & plotting for CurvAMP experiments
-"""
+# Updated evaluate.py – evaluation utilities, metrics & plotting for CurvAMP experiments
 from __future__ import annotations
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any
 
 import math
 
@@ -11,7 +9,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from scipy.sparse.linalg import cg  # type: ignore
-from torch_geometric.utils import to_dense_adj
+
+# -----------------------------------------------------------------------------
+#  Helper that avoids torch_scatter / torch_sparse dependencies
+# -----------------------------------------------------------------------------
+
+def _edge_index_to_dense(edge_index: torch.Tensor, num_nodes: int) -> torch.Tensor:
+    """Light-weight conversion of COO edge index to a dense adjacency matrix.
+    Works for unweighted, undirected graphs.
+    """
+    row, col = edge_index
+    device = row.device
+    A = torch.zeros((num_nodes, num_nodes), dtype=torch.float32, device=device)
+    A.index_put_((row, col), torch.ones_like(row, dtype=A.dtype), accumulate=True)
+    return A
 
 # -----------------------------------------------------------------------------
 #  Metrics
@@ -50,7 +61,7 @@ def _effective_resistance(L: torch.Tensor) -> torch.Tensor:
 
 def ater(edge_index: torch.Tensor, num_nodes: int) -> float:
     """Average total effective resistance – oversquashing proxy."""
-    A = to_dense_adj(edge_index).squeeze(0)
+    A = _edge_index_to_dense(edge_index, num_nodes)
     deg = torch.diag(A.sum(1))
     L = deg - A
     R = _effective_resistance(L)
@@ -60,7 +71,7 @@ def ater(edge_index: torch.Tensor, num_nodes: int) -> float:
 #  Plotting helpers
 # -----------------------------------------------------------------------------
 
-_FIG_DIR = Path(".research/iteration7/images")
+_FIG_DIR = Path(".research/iteration8/images")
 _FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 

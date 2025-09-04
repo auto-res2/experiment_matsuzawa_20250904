@@ -1,7 +1,4 @@
-"""
-main.py – orchestrates training & evaluation for CurvAMP experiments
-Execute with:  python -m src.main  (assuming src is a package or on PYTHONPATH)
-"""
+# Updated main.py – orchestrates training & evaluation for CurvAMP experiments
 from __future__ import annotations
 
 import random
@@ -61,7 +58,8 @@ def main():
     print(yaml.safe_dump(cfg))
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    torch.backends.cudnn.benchmark = True  # type: ignore[attr-defined]
+    if torch.cuda.is_available():  # type: ignore[attr-defined]
+        torch.backends.cudnn.benchmark = True  # type: ignore[attr-defined]
 
     for dset_name in cfg["datasets"]:
         print(f"\n--- Dataset: {dset_name} ---")
@@ -79,7 +77,7 @@ def main():
             accs.append(result["acc"])
 
         print(
-            f"Test accuracy mean±std: {np.mean(accs):.3f} ± {np.std(accs):.3f}\nFigures saved in .research/iteration6/images."
+            f"Test accuracy mean±std: {np.mean(accs):.3f} ± {np.std(accs):.3f}\nFigures saved in .research/iteration8/images."
         )
 
 
