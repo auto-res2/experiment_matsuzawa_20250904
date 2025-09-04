@@ -52,6 +52,24 @@ def log_results(path: Path, dic: Dict[str, Any]):
 # ---------------------------------------------------------------------
 
 def line_plot(values, title: str, ylabel: str, out_pdf: str | Path):
+    """Utility for saving a simple line plot.
+
+    All experiment images are redirected to the mandatory directory
+    `.research/iteration6/images` to comply with the evaluation rules.
+    """
+    # ------------------------------------------------------------------
+    # Ensure the canonical image directory exists
+    # ------------------------------------------------------------------
+    img_dir = Path(".research/iteration6/images")
+    img_dir.mkdir(parents=True, exist_ok=True)
+
+    # Only keep the file name portion of *out_pdf* and store it under
+    # the mandated directory so that calling sites do not need to be
+    # modified.
+    fname = Path(out_pdf).with_suffix(".pdf").name
+    out_path = img_dir / fname
+
+    # --------------------------- plotting -----------------------------
     plt.figure(figsize=(4, 3))
     plt.plot(values, lw=2, label=ylabel)
     for i, v in enumerate(values):
@@ -61,5 +79,5 @@ def line_plot(values, title: str, ylabel: str, out_pdf: str | Path):
     plt.ylabel(ylabel)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(str(out_pdf), bbox_inches="tight")
+    plt.savefig(str(out_path), bbox_inches="tight")
     plt.close()
