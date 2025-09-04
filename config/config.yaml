@@ -1,9 +1,9 @@
 dataset:
   root_dir: data
   waterbirds:
-    version: 2.0
+    version: 1.0  # v2.0 is not yet supported by the `wilds` package
     masks_npz: masks_npz/waterbirds_masks_224.npz
-    url: https://dl.fbaipublicfiles.com/wilds/waterbirds_v2.0.tgz
+    url: https://dl.fbaipublicfiles.com/wilds/waterbirds_v1.0.tgz
 model:
   backbone: resnetv2_50x1_bit.goog_in21k_ft_in1k
   num_classes: 2

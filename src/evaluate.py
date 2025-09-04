@@ -40,7 +40,7 @@ def _ensure_dir(p: Path) -> None:
 
 
 # All images must be stored under this directory according to the task rules
-_IMAGES_ROOT = Path(".research/iteration21/images")
+_IMAGES_ROOT = Path(".research/iteration22/images")
 _IMAGES_ROOT.mkdir(parents=True, exist_ok=True)
 
 
@@ -48,7 +48,7 @@ def save_bar_plot(series, title: str, fname: Path | str, ylabel: str) -> None:  
     """Save a simple bar plot.
 
     Irrespective of the *fname* requested by the caller, the figure is saved to
-    `.research/iteration21/images/<basename(fname)>` to comply with the
+    `.research/iteration22/images/<basename(fname)>` to comply with the
     evaluation framework requirements.
     """
     # Map requested filename to mandated directory while preserving basename
@@ -98,7 +98,12 @@ def diagnostics() -> None:
     erm, auto = erm.to(DEVICE, dtype=DTYPE), auto.to(DEVICE, dtype=DTYPE)
     erm.eval(); auto.eval()
 
-    ds = get_dataset("waterbirds", version="2.0", root_dir=str(ROOT / "data"))
+    # ------------------------------------------------------------------
+    # Use version from config (default 1.0) instead of hard-coding 2.0
+    # ------------------------------------------------------------------
+    wb_version: str = str(CONFIG["dataset"]["waterbirds"].get("version", "1.0"))
+
+    ds = get_dataset("waterbirds", version=wb_version, root_dir=str(ROOT / "data"))
     tf = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
     val = ds.get_subset("val", transform=tf)
     loader = get_eval_loader("standard", val, batch_size=32, num_workers=2)

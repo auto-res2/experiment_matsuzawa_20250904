@@ -1,7 +1,7 @@
+from __future__ import annotations
 """
 preprocess.py – data loading, masks, and other preprocessing utilities.
 """
-from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Tuple, Dict, Any
@@ -36,10 +36,12 @@ def _fail(msg: str) -> None:  # pragma: no cover (simple helper)
 
 def get_waterbirds_loaders(batch_size: int, seed: int) -> Tuple[Dict[str, Any], Any]:
     """Return train/val/test dataloaders and the raw WILDS dataset object."""
+    # Determine dataset version from config, defaulting to 1.0 (the only one currently supported by WILDS)
+    wb_version: str = str(CONFIG["dataset"]["waterbirds"].get("version", "1.0"))
     try:
         ds = get_dataset(
             "waterbirds",
-            version="2.0",
+            version=wb_version,
             root_dir=str(ROOT / CONFIG["dataset"]["root_dir"]),
             download=True,
         )
