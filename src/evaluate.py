@@ -1,10 +1,8 @@
+from __future__ import annotations
+
 """src/evaluate.py
 Model evaluation utilities + simple plotting helpers.
 """
-from __future__ import annotations
-
-import json
-import os
 from pathlib import Path
 from typing import Dict, Any
 
@@ -55,11 +53,19 @@ def evaluate(
 
 
 # -----------------------------------------------------------------------------
-#  Simple bar plot – saves to ``figures/accuracy_<tag>.pdf``.
+#  Simple bar plot – saves to ``.research/iteration2/images/accuracy_<tag>.pdf``.
 # -----------------------------------------------------------------------------
 
 def save_figures(res_dict: Dict[str, Any], tag: str) -> None:
-    os.makedirs("figures", exist_ok=True)
+    """Save accuracy bar plot into the mandated location.
+
+    All experiment figures must reside in ``.research/iteration2/images`` to
+    comply with the evaluation harness.  The directory structure is created on
+    demand.
+    """
+    img_dir = Path(".research") / "iteration2" / "images"
+    img_dir.mkdir(parents=True, exist_ok=True)
+
     fig, ax = plt.subplots(figsize=(4, 3))
     ax.bar([0], [res_dict["acc"]])
     ax.set_xticks([0])
@@ -71,7 +77,7 @@ def save_figures(res_dict: Dict[str, Any], tag: str) -> None:
     # annotate
     ax.text(0, res_dict["acc"] + 0.01, f"{res_dict['acc'] * 100:.1f}%", ha="center")
 
-    out_path = Path("figures") / f"accuracy_{tag}.pdf"
+    out_path = img_dir / f"accuracy_{tag}.pdf"
     fig.tight_layout()
     fig.savefig(out_path, bbox_inches="tight")
     print("[evaluate] Saved figure:", out_path)
