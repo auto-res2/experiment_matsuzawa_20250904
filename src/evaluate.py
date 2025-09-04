@@ -71,7 +71,7 @@ def group_distance_ratio(x: torch.Tensor, y: torch.Tensor) -> float:
 # ------------------------------------------------------------------
 
 # Enforce the updated output directory (see task instructions)
-_SAVE_DIR = Path(".research/iteration5/images")
+_SAVE_DIR = Path(".research/iteration6/images")
 
 
 def save_lineplot(
