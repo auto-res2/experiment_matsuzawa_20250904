@@ -1,10 +1,11 @@
-torch==2.3.0
---find-links https://data.pyg.org/whl/torch-2.3.0%2Bcu121.html
-torch_scatter==2.1.2+pt23cu121
-torch_sparse==0.6.18+pt23cu121
-torch_geometric==2.6.1
-networkx
-matplotlib
-pyyaml
+torch
+torch-geometric
+torch-sparse
+torch-scatter
 numpy
 scipy
+networkx
+matplotlib
+seaborn
+pandas
+PyYAML

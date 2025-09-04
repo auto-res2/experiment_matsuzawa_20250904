@@ -1,18 +1,10 @@
-experiment: default-exp
-datasets:
-- Path-of-Cliques
-- Ring-of-Cliques
-models:
-- GCN
-- PairNorm
-- CurvAMP
-depth: 32
+# =========================================================
+#  Default CurvAMP experiment configuration
+# =========================================================
+experiment: 1        # 1, 2, 3 or "all"
+fast: false          # true = quick sanity pass
 hidden: 128
-lr: 0.0005
-wd: 0.0005
+lr: 5e-4
+wd: 5e-4
 patience: 100
-max_epochs: 400
-seeds:
-- 0
-- 1
-- 2
+max_epochs: 2000

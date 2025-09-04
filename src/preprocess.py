@@ -1,104 +1,87 @@
-
-"""
-src/preprocess.py – dataset loading & synthetic generators
-"""
-from __future__ import annotations
-
-import random
 from pathlib import Path
-from typing import Tuple
+from typing import Any
 
-import networkx as nx
 import torch
 from torch_geometric.data import Data
 from torch_geometric.datasets import Planetoid, WebKB
 from torch_geometric.utils import from_networkx
+import networkx as nx
 
-# NOTE: LRGBDataset is imported lazily inside `load_dataset` to avoid unnecessary
-# hard dependency when it is not required by the chosen datasets. This prevents
-# ImportErrors in environments where the class name may differ across
-# torch-geometric versions.
+################################################################################
+#                               DATA HELPERS                                   #
+################################################################################
 
-# -----------------------------------------------------------------------------
-# Synthetic clique-based graphs (Path-of-Cliques, Ring-of-Cliques, Mixture)
-# -----------------------------------------------------------------------------
+_DATA_ROOT = Path("data")
+_DATA_ROOT.mkdir(exist_ok=True)
 
 
-def _gen_clique_graph(kind: str, n_cliques: int = 30, clique_size: int = 10) -> Data:
+# ---------------------------------------------------------------------------
+# Synthetic clique/graph generators used in Exp-1.
+# ---------------------------------------------------------------------------
+
+def _clique(kind: str, nc: int = 30, cs: int = 10) -> Data:
     if kind == "poc":
-        g = nx.connected_caveman_graph(n_cliques, clique_size)  # path-of-cliques
+        g = nx.connected_caveman_graph(nc, cs)
     elif kind == "roc":
-        g = nx.ring_of_cliques(n_cliques, clique_size)  # ring-of-cliques
+        g = nx.ring_of_cliques(nc, cs)
     else:
-        raise ValueError(f"Unknown kind {kind}")
+        raise ValueError("Unknown synthetic kind: %s" % kind)
 
-    # Node features = slightly noised one-hot inside each clique
     for v in g.nodes:
-        base = torch.zeros(clique_size)
-        base[v % clique_size] = 1.0
+        base = torch.zeros(cs)
+        base[v % cs] = 1.0
         g.nodes[v]["x"] = (base + 0.01 * torch.randn_like(base)).float()
-        g.nodes[v]["y"] = v // clique_size
+        g.nodes[v]["y"] = v // cs
     return from_networkx(g)
 
 
-def _get_synthetic(name: str) -> Data:
+def _synthetic(name: str) -> Data:
     if name == "Path-of-Cliques":
-        return _gen_clique_graph("poc")
+        return _clique("poc")
     if name == "Ring-of-Cliques":
-        return _gen_clique_graph("roc")
+        return _clique("roc")
     if name == "Mixture":
-        poc = _gen_clique_graph("poc")
-        roc = _gen_clique_graph("roc")
-        roc.edge_index += poc.num_nodes
-        data = Data(
-            x=torch.cat([poc.x, roc.x]),
-            edge_index=torch.cat([poc.edge_index, roc.edge_index], dim=1),
-            y=torch.cat([poc.y, roc.y]),
+        a = _clique("poc")
+        b = _clique("roc")
+        b.edge_index = b.edge_index + a.num_nodes  # shift indices
+        return Data(
+            x=torch.cat([a.x, b.x]),
+            edge_index=torch.cat([a.edge_index, b.edge_index], 1),
+            y=torch.cat([a.y, b.y]),
         )
-        return data
-    raise KeyError(name)
+    raise KeyError("Unrecognised synthetic dataset: %s" % name)
 
 
-# -----------------------------------------------------------------------------
-# Public loader – downloads real datasets on-the-fly if needed
-# -----------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Public loader – falls back to PyG datasets when necessary
+# ---------------------------------------------------------------------------
 
-def load_dataset(name: str, split_seed: int = 0):
+def load_dataset(name: str, split_seed: int = 0) -> Data:
+    """Return a single "Data" object with train/val/test boolean masks."""
+
     if name in {"Path-of-Cliques", "Ring-of-Cliques", "Mixture"}:
-        data = _get_synthetic(name)
-
+        data = _synthetic(name)
     elif name in {"Cora", "CiteSeer", "PubMed"}:
-        data = Planetoid(root="data/" + name, name=name)[0]
-
+        data = Planetoid(root=_DATA_ROOT / name, name=name)[0]
     elif name in {"Texas", "Cornell", "Wisconsin"}:
-        data = WebKB(root="data/" + name, name=name)[0]
-
-    elif name in {"Peptides-func", "Peptides-struct", "PCQM-Contact"}:
-        # Lazily import to avoid breaking when the class name changes.
-        try:
-            from torch_geometric.datasets import LRGBDataset as _LRGBDataset  # type: ignore
-        except ImportError as e:
-            raise ImportError(
-                "torch_geometric >=2.2 with LRGBDataset is required for the LRGB benchmarks"
-            ) from e
-
-        key = name.replace("-", "")  # LRGB naming quirk (e.g. Peptides-func → Peptidesfunc)
-        data = _LRGBDataset(root="data/LRGB", name=key)[0]
-
+        data = WebKB(root=_DATA_ROOT / name, name=name)[0]
     else:
-        raise KeyError(f"Unknown dataset {name}")
+        # LRGB datasets
+        from torch_geometric.datasets import LRGBDataset  # local import (heavy)
 
-    # -------------------------- train/val/test split -------------------------
+        key = name.replace("-", "")
+        data = LRGBDataset(root=_DATA_ROOT / "LRGB", name=key)[0]
+
+    # ---------------- train/val/test split ----------------
     torch.manual_seed(split_seed)
     if getattr(data, "train_mask", None) is None:
         n = data.num_nodes
         perm = torch.randperm(n)
         tr, va = int(0.6 * n), int(0.2 * n)
-        train_idx, val_idx, test_idx = perm[:tr], perm[tr : tr + va], perm[tr + va :]
         data.train_mask = torch.zeros(n, dtype=torch.bool)
         data.val_mask = torch.zeros(n, dtype=torch.bool)
         data.test_mask = torch.zeros(n, dtype=torch.bool)
-        data.train_mask[train_idx] = True
-        data.val_mask[val_idx] = True
-        data.test_mask[test_idx] = True
+        data.train_mask[perm[:tr]] = True
+        data.val_mask[perm[tr : tr + va]] = True
+        data.test_mask[perm[tr + va :]] = True
     return data
