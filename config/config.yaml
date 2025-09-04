@@ -1,10 +1,13 @@
-# =========================================================
-#  Default CurvAMP experiment configuration
-# =========================================================
-experiment: 1        # 1, 2, 3 or "all"
-fast: false          # true = quick sanity pass
+experiment: 1
+fast: false
 hidden: 128
-lr: 5e-4
-wd: 5e-4
 patience: 100
 max_epochs: 2000
+lr: 0.0005
+weight_decay: 0.0
+dropout: 0.2
+lambda_c: 0.1
+exp1:
+  lr: 0.003
+  dropout: 0.0
+  depth_grid: [4, 8, 16]

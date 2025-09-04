@@ -1,273 +1,241 @@
-import math
-import random
-import time
-from typing import Dict, Any
+"""src/train.py
+Training utilities, model definitions, and the full optimisation loop
+extracted from the original monolithic experiment script.
+"""
+from __future__ import annotations
+import math, random, time, contextlib, pathlib, typing, json
+from types import SimpleNamespace
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv, MessagePassing
+from torch_geometric.utils import add_self_loops
+import torch_sparse
 
-###########################################################################
-#                               UTILITIES                                #
-###########################################################################
+# ---------------------------------------------------------------------------
+# Configuration helper (light-weight replacement of the previous cfg(...))
+# ---------------------------------------------------------------------------
+import yaml
+_CFG_PATH = pathlib.Path("config/config.yaml")
+with _CFG_PATH.open() as fp:
+    _CFG = yaml.safe_load(fp)
 
-def set_seeds(seed: int = 0) -> None:
-    """Make all operations deterministic (CUDA, cudnn & numpy included)."""
+def cfg(*keys:str, default=None):
+    node: typing.Any = _CFG
+    for k in keys:
+        if node is None:
+            return default
+        node = node.get(k, default)
+    return node if node is not None else default
+
+# ---------------------------------------------------------------------------
+# Reproducibility helpers
+# ---------------------------------------------------------------------------
+
+def set_seeds(seed:int):
     random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
+@contextlib.contextmanager
+def cuda_timer():
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    t0=time.perf_counter()
+    yield lambda: time.perf_counter()-t0
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
 
-class CUDATimer:
-    """A context-manager that returns the wall-clock time of a code block."""
+# ---------------------------------------------------------------------------
+# Geometry – Forman curvature (needed by CurvAMP)
+# ---------------------------------------------------------------------------
 
-    def __enter__(self):
-        if torch.cuda.is_available():
-            torch.cuda.synchronize()
-        self._t0 = time.perf_counter()
-        return self
+def _degree(index: torch.Tensor, num_nodes: int) -> torch.Tensor:
+    row = index[0]
+    return torch_sparse.degree(row, num_nodes=num_nodes).clamp_min_(1)
 
-    def __exit__(self, *_):
-        if torch.cuda.is_available():
-            torch.cuda.synchronize()
-        self.sec = time.perf_counter() - self._t0
+def forman_edge(edge_index: torch.Tensor, num_nodes: int) -> torch.Tensor:
+    row, col = edge_index
+    deg = _degree(edge_index, num_nodes)
+    return 4.0 - deg[row] - deg[col]
 
-###########################################################################
-#                       NORMALISATION LAYERS                              #
-###########################################################################
+def forman_node(edge_index: torch.Tensor, num_nodes: int) -> torch.Tensor:
+    kappa_e = forman_edge(edge_index, num_nodes)
+    row = edge_index[0]
+    kappa_n = torch.zeros(num_nodes, device=row.device)
+    kappa_n.index_add_(0, row, kappa_e)
+    deg = _degree(edge_index, num_nodes)
+    return kappa_n / deg
 
+# ---------------------------------------------------------------------------
+# Normalisation layers
+# ---------------------------------------------------------------------------
 class PairNorm(nn.Module):
-    """PairNorm as proposed by Zhao & Akoglu (ICML 2020)."""
-
     def __init__(self, s: float = 1.0):
         super().__init__()
         self.s = s
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        col_mean = x.mean(0, keepdim=True)
-        x = x - col_mean
+        mu = x.mean(0, keepdim=True)
+        x = x - mu
         row_norm = x.pow(2).sum(1, keepdim=True).sqrt().mean()
         return self.s * x / (row_norm + 1e-8)
 
-
 class CurvPair(PairNorm):
-    """PairNorm variant whose scale depends on node-wise curvature κᵢ."""
-
     def forward(self, x: torch.Tensor, kappa: torch.Tensor) -> torch.Tensor:
-        out = super().forward(x)
-        scale = torch.sigmoid(-kappa).unsqueeze(1)  # larger when κ is positive
-        return out * scale
+        scale = torch.sigmoid(-kappa).unsqueeze(1)
+        return super().forward(x) * scale
 
-###########################################################################
-#                       CurvAMP CONVOLUTION                               #
-###########################################################################
-
+# ---------------------------------------------------------------------------
+# CurvAMP convolution (multi-scale, curvature gate, online rewiring)
+# ---------------------------------------------------------------------------
 class CurvAMPConv(MessagePassing):
-    """One CurvAMP layer as described in the paper header."""
-
-    def __init__(self, in_dim: int, out_dim: int, K: int = 3, rewired_ratio: float = 0.02):
+    def __init__(self, in_dim:int, out_dim:int, *, K:int=3,
+                 rewired_ratio:float=0.02, rewired_weight:float=0.3):
         super().__init__(aggr="add")
-        self.K = K
-        self.rr = rewired_ratio
-        self.proj = nn.ModuleList(
-            [nn.Linear(in_dim, out_dim, bias=False) for _ in range(K)]
+        self.K, self.rr, self.w_re = K, rewired_ratio, rewired_weight
+        self.proj = nn.ModuleList([
+            nn.Linear(in_dim, out_dim, bias=False) for _ in range(K)
+        ])
+        self.gate = nn.Sequential(
+            nn.Linear(2,16), nn.GELU(), nn.Linear(16,K)
         )
-        self.gate = nn.Sequential(nn.Linear(2, 16), nn.GELU(), nn.Linear(16, K))
         self.norm = CurvPair()
 
-    # ------------------------------------------------------------------
     def forward(self, x: torch.Tensor, edge_index: torch.Tensor):
         N = x.size(0)
-        row = edge_index[0]
+        edge_index, _ = add_self_loops(edge_index, num_nodes=N)
 
-        # Build sparse adjacency once
-        A = torch.sparse_coo_tensor(
-            edge_index, torch.ones(row.size(0), device=x.device), (N, N)
-        )
+        with torch.no_grad():
+            kappa_node = forman_node(edge_index, N)
+            deg = torch.bincount(edge_index[0], minlength=N).float().clamp_min_(1)
 
-        # Multi-scale bank h^{(k)}
+        row, col = edge_index
+        deg_inv_sqrt = deg.pow(-0.5)
+        vals = deg_inv_sqrt[row] * deg_inv_sqrt[col]
+        A = torch.sparse_coo_tensor(edge_index, vals, (N, N))
+
         bank = [x]
         for _ in range(1, self.K):
             bank.append(torch.sparse.mm(A, bank[-1]))
-        bank = [p(b) for p, b in zip(self.proj, bank)]
+        bank = [proj(b) for proj, b in zip(self.proj, bank)]
 
-        # Cheap curvature surrogate: 1 / deg
-        kappa_e = 1.0 / (torch.bincount(row, minlength=N)[row].clamp(min=1))
-        kappa_n = torch.zeros(N, device=x.device).index_add_(0, row, kappa_e)
-        deg = torch.bincount(row, minlength=N).float().clamp(min=1)
-        kappa_n = kappa_n / deg
+        alpha = torch.softmax(self.gate(torch.stack([kappa_node, deg], 1)), -1)
+        h = sum(alpha[:, k:k+1] * bank[k] for k in range(self.K))
 
-        # Attention over scales
-        alpha = torch.softmax(self.gate(torch.stack([kappa_n, deg], 1)), -1)
-        out = sum(alpha[:, k : k + 1] * bank[k] for k in range(self.K))
-
-        # Online micro-rewiring (forward pass only)
+        # --------------------------------------------------
+        # On-the-fly micro-rewiring (negative curvature pairs)
+        # --------------------------------------------------
         if self.rr > 0:
-            m = int(self.rr * row.numel())
-            if m > 0:  # safeguard small graphs
-                cand_u = torch.randint(0, N, (m * 3,), device=x.device)
-                cand_v = torch.randint(0, N, (m * 3,), device=x.device)
-                cand_e = torch.stack([cand_u, cand_v])
-                kappa_uv = kappa_n[cand_u] + kappa_n[cand_v]
-                p = torch.softmax(-kappa_uv, 0)
-                idx = torch.multinomial(p, m, replacement=False)
-                edge_index = torch.cat([edge_index, cand_e[:, idx]], 1)
+            m = math.floor(self.rr * edge_index.size(1))
+            if m > 0:
+                with torch.no_grad():
+                    cand_u = torch.randint(0, N, (3*m,), device=x.device)
+                    cand_v = torch.randint(0, N, (3*m,), device=x.device)
+                    neg_mask = (kappa_node[cand_u] + kappa_node[cand_v]) < 0
+                    cand_u, cand_v = cand_u[neg_mask], cand_v[neg_mask]
+                    if cand_u.numel():
+                        score = torch.exp(-(kappa_node[cand_u] + kappa_node[cand_v]))
+                        idx = torch.multinomial(score / score.sum(), min(m, cand_u.size(0)), False)
+                        new_edges = torch.stack([cand_u[idx], cand_v[idx]])
+                        edge_index = torch.cat([edge_index, new_edges], 1)
+                        extra_vals = self.w_re * torch.ones(new_edges.size(1), device=x.device)
+                        vals = torch.cat([vals, extra_vals], 0)
+                        A = torch.sparse_coo_tensor(edge_index, vals, (N, N))
 
-        out = self.norm(out, kappa_n)
+        out = self.norm(h, kappa_node)
         return out, edge_index
 
-###########################################################################
-#                               NETWORKS                                  #
-###########################################################################
-
+# ---------------------------------------------------------------------------
+# Network wrappers
+# ---------------------------------------------------------------------------
 class GCNStack(nn.Module):
-    """Vanilla deep GCN with ReLU + Dropout."""
-
-    def __init__(self, in_dim: int, hid: int, out_dim: int, depth: int, dropout: float = 0.2):
+    def __init__(self, in_dim:int, hid:int, out_dim:int, depth:int, dropout:float=0.2):
         super().__init__()
         self.dropout = dropout
-        # NOTE: cached=False to avoid stale CPU caches when model is moved to GPU later
-        self.convs = nn.ModuleList(
-            [GCNConv(in_dim if i == 0 else hid, hid, cached=False) for i in range(depth)]
-        )
+        self.convs = nn.ModuleList([
+            GCNConv(in_dim if i == 0 else hid, hid) for i in range(depth)
+        ])
         self.head = nn.Linear(hid, out_dim)
-
     def forward(self, data):
         x, ei = data.x, data.edge_index
-        feats = []
-        for c in self.convs:
-            x = F.relu(c(x, ei))
+        for conv in self.convs:
+            x = F.relu(conv(x, ei))
             x = F.dropout(x, p=self.dropout, training=self.training)
-            feats.append(x)
-        return self.head(x), feats
-
+        return self.head(x)
 
 class PairNormGCN(GCNStack):
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
         self.pn = PairNorm()
-
     def forward(self, data):
         x, ei = data.x, data.edge_index
-        feats = []
-        for c in self.convs:
-            x = self.pn(F.relu(c(x, ei)))
-            feats.append(x)
-        return self.head(x), feats
+        for conv in self.convs:
+            x = self.pn(F.relu(conv(x, ei)))
+        return self.head(x)
 
-
-class CurvAMP(nn.Module):
-    """Our proposed architecture (depth L).
-    K and rewired_ratio are exposed for ablations.
-    """
-
-    def __init__(self, in_dim: int, hid: int, out_dim: int, depth: int, K: int = 3, rewired_ratio: float = 0.02):
+class CurvAMPNet(nn.Module):
+    def __init__(self, in_dim:int, hid:int, out_dim:int, depth:int, *, K:int=3, rewired_ratio:float=0.02):
         super().__init__()
-        self.layers = nn.ModuleList(
-            [CurvAMPConv(in_dim if i == 0 else hid, hid, K, rewired_ratio) for i in range(depth)]
-        )
+        self.layers = nn.ModuleList([
+            CurvAMPConv(in_dim if i == 0 else hid, hid, K=K, rewired_ratio=rewired_ratio)
+            for i in range(depth)
+        ])
         self.head = nn.Linear(hid, out_dim)
-
     def forward(self, data):
         x, ei = data.x, data.edge_index
-        feats = []
         for layer in self.layers:
             x, ei = layer(x, ei)
             x = torch.relu(x)
-            feats.append(x)
-        return self.head(x), feats
+        return self.head(x)
 
+MODELS = {"GCN": GCNStack, "PairNorm": PairNormGCN, "CurvAMP": CurvAMPNet}
 
-# Registry ----------------------------------------------------------------
-MODELS = {
-    "GCN": GCNStack,
-    "PairNorm": PairNormGCN,
-    "CurvAMP": CurvAMP,
-}
+# ---------------------------------------------------------------------------
+# Training loop (single split, early stopping)
+# ---------------------------------------------------------------------------
 
-###########################################################################
-#                          TRAINING ROUTINES                              #
-###########################################################################
+def train_model(model: nn.Module, data, *, seed:int = 0) -> dict:
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model, data = model.to(device), data.to(device)
 
-def _to_float(value, default: float) -> float:
-    """Utility to safely cast YAML-read scalars to float.
-
-    PyYAML occasionally preserves scientific-notation strings when a comment is
-    present on the same line (implementation quirk).  To make the training
-    robust we defensively cast any incoming value to float, falling back to a
-    provided default when the key is missing.
-    """
-    if value is None:
-        return default
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        # In the unlikely event the value cannot be converted we raise an
-        # explicit error message instead of propagating a cryptic torch error.
-        raise ValueError(f"Cannot convert config value '{value}' to float.")
-
-
-def _clear_cached_edge_index(module: nn.Module):
-    """Remove cached edge indices inside any GCNConv layers.
-
-    This is necessary when a model built (and therefore *cached*) on CPU is
-    subsequently moved to GPU.  Without clearing, the stale CPU tensors would
-    be re-used causing device mismatch errors during the forward pass.
-    """
-    for m in module.modules():
-        if isinstance(m, GCNConv):
-            m._cached_edge_index = None
-            m._cached_adj_t = None
-
-
-def train_model(model: nn.Module, data, cfg: Dict[str, Any], device: torch.device) -> nn.Module:
-    """Standard supervised training with early stopping on the validation loss."""
-
-    # Move tensors **before** the optimizer is constructed and clear any stale
-    # caches created during the CPU warm-up pass.
-    model.to(device)
-    _clear_cached_edge_index(model)
-    data = data.to(device)
-
-    # --- robust handling of config types ----------------------------------
-    lr = _to_float(cfg.get("lr"), 5e-4)
-    wd = _to_float(cfg.get("wd"), 5e-4)
-    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
-
-    best_val = float("inf")
+    set_seeds(seed)
+    optimiser = torch.optim.AdamW(model.parameters(), lr=cfg('lr', default=5e-4),
+                                  weight_decay=cfg('weight_decay', default=0.0))
+    best_val = float('inf')
     best_state = None
-    patience = int(cfg["patience"])
-    epochs_no_improve = 0
+    patience = cfg('patience', default=100)
+    stale = 0
+    history = []
 
-    for epoch in range(int(cfg["max_epochs"])):
-        model.train()
-        opt.zero_grad()
-        logits, _ = model(data)
-        loss = F.cross_entropy(logits[data.train_mask], data.y[data.train_mask])
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        opt.step()
+    with cuda_timer() as total_time:
+        for epoch in range(cfg('max_epochs', default=2000)):
+            model.train(); optimiser.zero_grad()
+            out = model(data)
+            loss = F.cross_entropy(out[data.train_mask], data.y[data.train_mask])
+            loss.backward(); optimiser.step()
 
-        # ------ validation ------
-        model.eval()
-        with torch.no_grad():
-            val_logits, _ = model(data)
-            val_loss = F.cross_entropy(val_logits[data.val_mask], data.y[data.val_mask])
+            model.eval()
+            with torch.no_grad():
+                val_out = model(data)
+                val_loss = F.cross_entropy(val_out[data.val_mask], data.y[data.val_mask])
+            history.append(float(val_loss))
 
-        if val_loss < best_val:
-            best_val = val_loss
-            best_state = {k: v.detach().cpu() for k, v in model.state_dict().items()}
-            epochs_no_improve = 0
-        else:
-            epochs_no_improve += 1
+            if val_loss < best_val:
+                best_val = float(val_loss)
+                best_state = {k: v.cpu() for k, v in model.state_dict().items()}
+                stale = 0
+            else:
+                stale += 1
+            if stale > patience:
+                break
+    train_seconds = total_time()
+    model.load_state_dict(best_state)
 
-        if epochs_no_improve > patience:
-            break
-
-    # Roll back to best epoch
-    if best_state is not None:
-        model.load_state_dict(best_state)
-    return model
+    return {
+        "model": model,
+        "val_curve": history,
+        "train_time": train_seconds
+    }

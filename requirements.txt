@@ -1,9 +1,9 @@
 torch
-torch-geometric
+torch_geometric
+torch_sparse
+networkx
+pyyaml
 numpy
 scipy
-networkx
 matplotlib
 seaborn
-pandas
-PyYAML
