@@ -12,7 +12,7 @@ import torch
 import torch.nn.functional as F  # only used indirectly for type clarity
 
 # All generated figures go into the mandated directory
-_FIG_DIR = Path(".research/iteration10/images")
+_FIG_DIR = Path(".research/iteration11/images")
 _FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 # -----------------------------------------------------------------------------
