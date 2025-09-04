@@ -8,9 +8,9 @@ import torch
 from scipy.stats import wilcoxon
 
 # ------------------------------------------------------------------
-# All experiment figures must live under .research/iteration18/images
+# All experiment figures must live under .research/iteration19/images
 # ------------------------------------------------------------------
-FIG_DIR = Path(".research/iteration18/images")
+FIG_DIR = Path(".research/iteration19/images")
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 ###########################################################################

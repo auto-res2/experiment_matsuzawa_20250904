@@ -129,8 +129,9 @@ class GCNStack(nn.Module):
     def __init__(self, in_dim: int, hid: int, out_dim: int, depth: int, dropout: float = 0.2):
         super().__init__()
         self.dropout = dropout
+        # NOTE: cached=False to avoid stale CPU caches when model is moved to GPU later
         self.convs = nn.ModuleList(
-            [GCNConv(in_dim if i == 0 else hid, hid, cached=True) for i in range(depth)]
+            [GCNConv(in_dim if i == 0 else hid, hid, cached=False) for i in range(depth)]
         )
         self.head = nn.Linear(hid, out_dim)
 
@@ -209,10 +210,26 @@ def _to_float(value, default: float) -> float:
         raise ValueError(f"Cannot convert config value '{value}' to float.")
 
 
+def _clear_cached_edge_index(module: nn.Module):
+    """Remove cached edge indices inside any GCNConv layers.
+
+    This is necessary when a model built (and therefore *cached*) on CPU is
+    subsequently moved to GPU.  Without clearing, the stale CPU tensors would
+    be re-used causing device mismatch errors during the forward pass.
+    """
+    for m in module.modules():
+        if isinstance(m, GCNConv):
+            m._cached_edge_index = None
+            m._cached_adj_t = None
+
+
 def train_model(model: nn.Module, data, cfg: Dict[str, Any], device: torch.device) -> nn.Module:
     """Standard supervised training with early stopping on the validation loss."""
 
+    # Move tensors **before** the optimizer is constructed and clear any stale
+    # caches created during the CPU warm-up pass.
     model.to(device)
+    _clear_cached_edge_index(model)
     data = data.to(device)
 
     # --- robust handling of config types ----------------------------------
