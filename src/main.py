@@ -45,8 +45,8 @@ DATASETS   = ["Path-of-Cliques", "Ring-of-Cliques", "Mixture"]
 DEPTH_GRID = cfg('exp1', 'depth_grid', default=[4,8,16])
 SEEDS      = [0] if cfg('fast', default=False) else list(range(10))
 
-# Ensure the mandatory image directory exists
-IMG_DIR = Path(".research/iteration25/images")
+# Ensure the mandatory image directory exists (iteration26 as per spec)
+IMG_DIR = Path(".research/iteration26/images")
 IMG_DIR.mkdir(parents=True, exist_ok=True)
 
 success, total = 0, 0
